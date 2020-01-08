@@ -7,7 +7,7 @@ This document describes tools that can be used for deploying over-the-air (OTA) 
 * **Deploy OTA firmware updates using shell scripts**
 * **Deploy OTA firmware updates using python**
 
-# **Deploy OTA firmware updates using shell **scripts:
+# Deploy OTA firmware updates using shell scripts:
 
 ## Description:
 
@@ -190,7 +190,7 @@ sh OtaStressStart.sh ThingList.txt MyJobID123 2 file://example-job.json  file://
 
 
 
-# **Deploy OTA firmware updates using **python:
+# Deploy OTA firmware updates using python:
 
 ## Description:
 
@@ -231,7 +231,7 @@ jobs.py creates the job,stream documents, upload the bin file to S3, parse the t
 
 ### Usage:
 
-update the **dev.ini **in **src** folder
+update the **dev.ini in src** folder
 
 ![](./docs/src_folder.png)
 

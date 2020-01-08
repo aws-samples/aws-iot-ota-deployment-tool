@@ -1,0 +1,2 @@
+arn:aws:iot:us-east-1:<your account>:thing/<your thing1>
+arn:aws:iot:us-east-1:<your account>:thing/<your thing2>

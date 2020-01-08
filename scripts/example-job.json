@@ -1,0 +1,9 @@
+{
+    "command": "fota",
+    "streamId": "TestStream55667788",
+    "fileId": 69,
+    "fileSize": 382432,
+    "imageVer": "1",
+    "md5sum": "afcba86284d600cd21f54dca7c6d8bb6"
+}
+cat example-job.json

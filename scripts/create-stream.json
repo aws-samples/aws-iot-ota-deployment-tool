@@ -1,0 +1,14 @@
+{
+    "streamId": "TestStream55667788",
+    "description": "This stream is used for sending 1 ota stream file to devices.",
+    "files": [
+        {
+            "fileId": 69,
+            "s3Location": {
+                "bucket": "iot-ota-upgrade-package-bb",
+                "key": "69/aws_demo.bin"
+            }
+        }
+    ],
+    "roleArn": "arn:aws:iam::482862934379:role/iotlabtpe-ota"
+}

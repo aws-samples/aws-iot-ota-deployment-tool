@@ -304,6 +304,3 @@ monitor.py takes the same **dev.ini** file as parameters
 ```
 python3 monitor.py
 ```
-
-## Appendix
-

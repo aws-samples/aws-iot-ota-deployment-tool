@@ -15,7 +15,7 @@ config.read('dev.ini')
 if 'DEFAULT' not in config:
     raise Exception('invalid config')
 thingList =  config['DEFAULT']['thingList']
-iot_api_sleep_time = int(config['DEFAULT']['iot_api_sleep_time'])
+iotApiSleepTime = int(config['DEFAULT']['iotApiSleepTime'])
 region = config['DEFAULT']['region']
 
 iot = boto3.client('iot', region_name=region)
@@ -41,16 +41,26 @@ def create_stream(streamId, fileId, bucket, key, role_arn):
         return False, str(e)
     return True, None
 
-def create_job(jobId, thingArn, documentSource):
-    logging.info('create_job jobId %s', jobId)
+def create_job(deployConfig):
+    logging.info('create_job jobId %s', deployConfig['defaultConfig']['jobId'])
+    kwargs = {
+        'jobId': deployConfig['defaultConfig']['jobId'],
+        'targets': deployConfig['defaultConfig']['thingArnList'],
+        'documentSource': deployConfig['defaultConfig']['jobDocumentSrc'],
+        'targetSelection': deployConfig['defaultConfig']['targetSelection']
+    }
+
+    if deployConfig['presignedUrlConfig']:
+        kwargs['presignedUrlConfig'] = deployConfig['presignedUrlConfig']
+    if deployConfig['jobExecutionsRolloutConfig']:
+        kwargs['jobExecutionsRolloutConfig'] = deployConfig['jobExecutionsRolloutConfig']
+    if deployConfig['abortConfig']:
+        kwargs['abortConfig'] = deployConfig['abortConfig']
+    if deployConfig['timeoutConfig']:
+        kwargs['timeoutConfig'] = deployConfig['timeoutConfig']
+
     try:
-        response = iot.create_job(
-            jobId=jobId,
-            targets=thingArn,
-            documentSource=documentSource,
-            description='testingJob',
-            targetSelection='SNAPSHOT'
-        )
+        response = iot.create_job(**kwargs)
     except ClientError as e:
         return False, str(e)
     return True, None
@@ -80,7 +90,7 @@ def cancel_job(jobId):
         iot.cancel_job(jobId=jobId)
     except ClientError as e:
         return False, str(e)
-    time.sleep(iot_api_sleep_time)
+    time.sleep(iotApiSleepTime)
     return True, None
 
 
@@ -90,7 +100,7 @@ def delete_job(jobId):
         iot.delete_job(jobId=jobId, force=True)
     except ClientError as e:
         return False, str(e)
-    time.sleep(iot_api_sleep_time)
+    time.sleep(iotApiSleepTime)
     return True, None
 
 def delete_stream(streamId):
@@ -99,6 +109,6 @@ def delete_stream(streamId):
         iot.delete_stream(streamId=streamId)
     except ClientError as e:
         return False, str(e)
-    time.sleep(iot_api_sleep_time)
+    time.sleep(iotApiSleepTime)
     return True, None
 

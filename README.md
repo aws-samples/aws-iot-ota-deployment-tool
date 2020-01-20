@@ -86,8 +86,8 @@ job document
 
 ```
     "streamId": "fota-image-v1-stream",
-    "fileId": *any_integer_between_0_to_255*,
-    "fileSize": *your_fota_image_size_in_Bytes*
+    "fileId": any_integer_between_0_to_255,
+    "fileSize": your_fota_image_size_in_Bytes
 ```
 
 
@@ -223,7 +223,7 @@ After listed down the devices, your thingList.txt file should look like this :
 
 ![](./docs/thinglist.png)
 
-## Running jobs.py
+## Running jobs_scheduler.py
 
 **Description:**
 
@@ -231,7 +231,7 @@ jobs.py creates the job,stream documents, upload the bin file to S3, parse the t
 
 ### Usage:
 
-update the **dev.ini in src** folder
+update the **dev.ini** in **src** folder
 
 ![](./docs/src_folder.png)
 
@@ -239,19 +239,79 @@ update the **dev.ini in src** folder
 [DEFAULT]
 thingList = thingsList.txt
 binName = test.bin
-roleArn = arn:aws:iam::12345678:role/<your_role>
-jobId = <yourJobId>
+roleArn = arn:aws:iam::123456789:role/<your_role>
+jobId = JobPython5566
 rounds = 34
 bucket = iot-ota-deployment-tool
-cleanUpCfg = True
+cleanUpCfg = False
 debug = False
-default_delay = 5
+defaultDelay = 5
 region = us-east-1
-streamId = <yourSteamId>
-iot_api_sleep_time = 15
-file_chunck_size = 8192
+streamId = StreamPython5566
+iotApiSleepTime = 50
+fileChunkSize = 8192
+targetSelection = SNAPSHOT
+useCustomJobDocument = False
+usePresignedUrlConfig = False
+useJobExecutionsRolloutConfig = False
+useAbortConfig = False
+useTimeoutConfig = False
+
+[CUSTOM_JOB_DOCUMENT]
+jobDocSrcCfg = local_file
+jobDocSrcUrl = None
+jobDocPath = job_temp.json
+
+[PRESIGNED_URL_CONFIG]
+roleArn = arn:aws:iam::123456789:role/<your_signing_role>
+expiresInSec = 3600
+
+[JOB_EXECUTE_ROLLOUT_CONFIG]
+maximumPerMinute = 100
+useExponentialRateCfg = True
+
+[EXP_RATE_CONFIG]
+baseRatePerMinute = 100
+incrementFactor = 2.0
+useRateIncreaseCriteria = True
+
+[INCREASE_CRITERIA]
+numberOfNotifiedThings = 15
+numberOfSucceededThings = 123
+
+[ABORT_CONFIG]
+useAllSubsection = True
+useFailedSubsection = False
+useRejectedSubsection = False
+useTimedOutSubsection = False
+
+[ABORT_CONFIG_TYPE_ALL]
+failureType = ALL
+thresholdPercentage = 11.0
+minNumberOfExecutedThings = 1
+
+[ABORT_CONFIG_TYPE_FAILED]
+failureType = FAILED
+thresholdPercentage = 13.0
+minNumberOfExecutedThings = 1
+
+[ABORT_CONFIG_TYPE_REJECTED]
+failureType = REJECTED
+thresholdPercentage = 12.0
+minNumberOfExecutedThings = 1
+
+[ABORT_CONFIG_TYPE_TIMED_OUT]
+failureType = TIMED_OUT
+thresholdPercentage = 14.0
+minNumberOfExecutedThings = 1
+
+[TIMEOUT_CONFIG]
+inProgressTimeoutInMinutes = 60
 
 ```
+[DEFAULT]
+
+description: [DEFAULT] section is required and the job will be deployed with the following params
 
 * thingList:
     *  for example Thinglist.txt like the above example
@@ -271,21 +331,150 @@ file_chunck_size = 8192
     * to decide if the jobs will be clean up after the test is done
 * debug:
     * to decide if the log output will be write to a file or output to stdout
-* default_delay:
+* defaultDelay:
     * the delay time for each round
 * region:
     * the region that will be used in this test
-* iot_api_sleep_time:
+* iotApiSleepTime:
     * the delay time for each time calling AWS IoT api
-* file_chunck_size:
+* fileChunkSize:
     * To calculate md5 sum of the file, the file will be divided into chunks and calculate the hash value and combine the results as the file’s md5 sum value, if the file can not be divide by the chunk size, the remainder will be hashed alone.
+* targetSelection:
+    * Specifies whether the job will continue to run (CONTINUOUS), or will be complete after all those things specified as targets have completed the job (SNAPSHOT). If continuous, the job may also be run on a thing when a change is detected in a target. For example, a job will run on a thing when the thing is added to a target group, even after the job was completed by all things originally in the group.
+* useCustomJobDocument (option):
+    * users can use a comtomized job document with more details while deploying, if useCustomJobDocument set True, means [CUSTOM_JOB_DOCUMENT] section should be included in the config, if set false or useCustomJobDocument is not appeared in dev.ini [CUSTOM_JOB_DOCUMENT] section will be ignored
+* usePresignedUrlConfig:
+    * if usePresignedUrlConfig set True, means [PRESIGNED_URL_CONFIG] section should be included in the config, if set false or usePresignedUrlConfig is not appeared in dev.ini [PRESIGNED_URL_CONFIG] section will be ignored
+* useJobExecutionsRolloutConfig (option):
+    * if useJobExecutionsRolloutConfig set True, means [JOB_EXECUTE_ROLLOUT_CONFIG] section should be included in the config, if set false or useJobExecutionsRolloutConfig is not appeared in dev.ini [JOB_EXECUTE_ROLLOUT_CONFIG] section will be ignored
+* useAbortConfig (option):
+    * if useAbortConfig set True, means [ABORT_CONFIG] section should be included in the config, if set false or useAbortConfig is not appeared in dev.ini [ABORT_CONFIG] section will be ignored
+* useTimeoutConfig (option):
+    * if useTimeoutConfig set True, means [TIMEOUT_CONFIG] section should be included in the config, if set false or useTimeoutConfig is not appeared in dev.ini [TIMEOUT_CONFIG] section will be ignored, you remove the flag to ignore it
+
+[CUSTOM_JOB_DOCUMENT]
+
+* jobDocSrcCfg:
+    *  set to local_file means user will use a customized job document set in **jobDocPath** , noted that the deployment tools will append the following elements in to the docuemnt while generated at run time:
+    ```
+    {
+        "command": "fota",
+        "streamId": "TestStream55667788",
+        "fileId": 69,
+        "fileSize": 382432,
+        "imageVer": "1",
+        "md5sum": "afcba86284d600cd21f54dca7c6d8bb6"
+    }
+    ```
+    *  set to url means user will use a customized job document in a s3 remote url in  **jobDocSrcUrl**, noted that the document will be donwloaded and the deployment tools will append the following elements in to the docuemnt while generated at run time:
+    ```
+    {
+        "command": "fota",
+        "streamId": "TestStream55667788",
+        "fileId": 69,
+        "fileSize": 382432,
+        "imageVer": "1",
+        "md5sum": "afcba86284d600cd21f54dca7c6d8bb6"
+    }
+    ```
+
+* jobDocSrcUrl:
+    * a url that points to the customized job document in a s3 bucket
+* jobDocPath:
+    * a customized job document in the local machine
+
+
+[PRESIGNED_URL_CONFIG]
+Configuration information for pre-signed S3 URLs.
+* roleArn:
+    * The ARN of an IAM role that grants grants permission to download files from the S3 bucket where the job data/updates are stored. The role must also grant permission for IoT to download the files.
+* expiresInSec:
+    * How long (in seconds) pre-signed URLs are valid. Valid values are 60 - 3600, the default value is 3600 seconds. Pre-signed URLs are generated when Jobs receives an MQTT request for the job document.
+
+[JOB_EXECUTE_ROLLOUT_CONFIG]
+Allows you to create a staged rollout of the job.
+* maximumPerMinute:
+    * The maximum number of things that will be notified of a pending job, per minute. This parameter allows you to create a staged rollout.
+* useExponentialRateCfg:
+    * if useExponentialRateCfg set True, means [EXP_RATE_CONFIG]
+ section should be included in the config, if set false or useExponentialRateCfg is not appeared in dev.ini [EXP_RATE_CONFIG] section will be ignored, you remove the flag to ignore it
+
+[EXP_RATE_CONFIG]
+
+* baseRatePerMinute:
+    * The minimum number of things that will be notified of a pending job, per minute at the start of job rollout. This parameter allows you to define the initial rate of rollout.
+* incrementFactor:
+    * The exponential factor to increase the rate of rollout for a job.
+* useRateIncreaseCriteria:
+    * The criteria to initiate the increase in rate of rollout for a job. AWS IoT supports up to one digit after the decimal (for example, 1.5, but not 1.55).
+    * if useRateIncreaseCriteria set True, means [INCREASE_CRITERIA] section should be included in the config, if set false or useRateIncreaseCriteria is not appeared in dev.ini [INCREASE_CRITERIA] section will be ignored, you remove the flag to ignore it
+
+
+[INCREASE_CRITERIA]
+
+* numberOfNotifiedThings:
+    * The threshold for number of notified things that will initiate the increase in rate of rollout.
+    * The threshold for number of succeeded things that will initiate the increase in rate of rollout.
+
+[ABORT_CONFIG]
+Allows you to create criteria to abort a job. requires at least one Failure type (useAllSubsection|useFailedSubsection|useRejectedSubsection|useTimedOutSubsection) needs to be set to True
+* useAllSubsection:
+    * if useAllSubsection set True, means [ABORT_CONFIG_TYPE_ALL] section should be included in the config, if set false or useAllSubsection is not appeared in dev.ini [ABORT_CONFIG_TYPE_ALL] section will be ignored, you remove the flag to ignore it, noted that if useAllSubsection is set to True, the rest of the section is ignored and will be all applied with the params in [ABORT_CONFIG_TYPE_ALL] section
+* useFailedSubsection:
+    * if useFailedSubsection set True, means [ABORT_CONFIG_TYPE_FAILED] section should be included in the config, if set false or useFailedSubsection is not appeared in dev.ini [ABORT_CONFIG_TYPE_FAILED] section will be ignored, you remove the flag to ignore it
+* useRejectedSubsection:
+    * if useExponentiauseRejectedSubsectionlRateCfg set True, means [ABORT_CONFIG_TYPE_REJECTED] section should be included in the config, if set false or useRejectedSubsection is not appeared in dev.ini [ABORT_CONFIG_TYPE_REJECTED] section will be ignored, you remove the flag to ignore it
+* useTimedOutSubsection:
+    * if useTimedOutSubsection set True, means [ABORT_CONFIG_TYPE_TIMED_OUT] section should be included in the config, if set false or useTimedOutSubsection is not appeared in dev.ini [ABORT_CONFIG_TYPE_TIMED_OUT] section will be ignored, you remove the flag to ignore it
+
+[ABORT_CONFIG_TYPE_ALL]
+
+* failureType:
+    * The type of job execution failure to define a rule to initiate a job abort.
+* thresholdPercentage:
+    * The threshold as a percentage of the total number of executed things that will initiate a job abort. AWS IoT supports up to two digits after the decimal (for example, 10.9 and 10.99, but not 10.999).
+* minNumberOfExecutedThings:
+    * Minimum number of executed things before evaluating an abort rule.
+
+[ABORT_CONFIG_TYPE_FAILED]
+
+* failureType:
+    * The type of job execution failure to define a rule to initiate a job abort as Failed.
+* thresholdPercentage:
+    * The threshold as a percentage of the total number of executed things that will initiate a job abort. AWS IoT supports up to two digits after the decimal (for example, 10.9 and 10.99, but not 10.999).
+* minNumberOfExecutedThings:
+    * Minimum number of executed things before evaluating an abort rule.
+
+[ABORT_CONFIG_TYPE_REJECTED]
+
+* failureType:
+    * The type of job execution failure to define a rule to initiate a job abort as Rejected.
+* thresholdPercentage:
+    * The threshold as a percentage of the total number of executed things that will initiate a job abort. AWS IoT supports up to two digits after the decimal (for example, 10.9 and 10.99, but not 10.999).
+* minNumberOfExecutedThings:
+    * Minimum number of executed things before evaluating an abort rule.
+
+[ABORT_CONFIG_TYPE_TIMED_OUT]
+
+* failureType:
+    * The type of job execution failure to define a rule to initiate a job abort as Timed Out.
+* thresholdPercentage:
+    * The threshold as a percentage of the total number of executed things that will initiate a job abort. AWS IoT supports up to two digits after the decimal (for example, 10.9 and 10.99, but not 10.999).
+* minNumberOfExecutedThings:
+    * Minimum number of executed things before evaluating an abort rule.
+
+[TIMEOUT_CONFIG]
+Specifies the amount of time each device has to finish its execution of the job. The timer is started when the job execution status is set to IN_PROGRESS . If the job execution status is not set to another terminal state before the time expires, it will be automatically set to TIMED_OUT
+* inProgressTimeoutInMinutes:
+    * Specifies the amount of time, in minutes, this device has to finish execution of this job. The timeout interval can be anywhere between 1 minute and 7 days (1 to 10080 minutes). The in progress timer can't be updated and will apply to all job executions for the job. Whenever a job execution remains in the IN_PROGRESS status for longer than this interval, the job execution will fail and switch to the terminal TIMED_OUT status.
+
 
 ### 
 
 ### **Start deploy jobs for test:**
 
 ```
-python3 jobs.py
+python3 jobs_scheduler.py
 ```
 
 
@@ -304,3 +493,52 @@ monitor.py takes the same **dev.ini** file as parameters
 ```
 python3 monitor.py
 ```
+
+## Customizing your test
+
+You can also customize your job document with python tools. But please aware that the deployment tool will overwrite/append the following attributes accroding to the template below with values generated at runtime
+
+### Template Example:
+
+job document
+
+```
+{
+    "command": "fota",
+    "streamId": "TestStream55667788",
+    "fileId": 69,
+    "fileSize": 382432,
+    "imageVer": "1",
+    "md5sum": "afcba86284d600cd21f54dca7c6d8bb6"
+}
+
+```
+
+```
+    "streamId": "fota-image-v1-stream",
+    "fileId": any_integer_between_0_to_255,
+    "fileSize": your_fota_image_size_in_Bytes
+```
+
+for example, you can have a customized job_temp.json file as input. The deployment tool will append the runtime genetated data into the file and create jobs with it.
+
+job_temp.json before
+
+    {
+            "Info1": "123",
+            "Info2": "456",
+            "Info3": "789",
+    }
+job_temp.json after
+
+    {
+            "Info1": "123",
+            "Info2": "456",
+            "Info3": "789",
+            "command": "fota",
+            "streamId": "StreamId_wgrj34tNTvan18VYSWHyTw_35",
+            "fileId": 35,
+            "fileSize": 27434,
+            "md5sum": "1257723f145356a61311084f1e45d592"
+    }
+

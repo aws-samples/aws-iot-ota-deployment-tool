@@ -26,6 +26,7 @@ JobStreamFile=$5
 JobStreamID=$6
 Targets=$7
 counter=0
+fail_counter=0
 HardLimitWaitCount=200
 
 ####parse thing lists
@@ -116,6 +117,7 @@ do
                     echo "OTA job failed"
                     echo "print the JOB status"
                     counter=0
+                    fail_counter=$((fail_counter+1))
                     aws iot describe-job --job-id ${jobid}
                     #aws iot cancel-job --job-id ${jobid}
                     #aws iot delete-job --job-id ${jobid}
@@ -134,5 +136,7 @@ do
     done
 done
 
-
-
+# results
+echo "total,$counter" > results.csv
+echo "fail,$fail_counter" >> results.csv
+echo "succeed,$((counter - fail_counter))" >> results.csv

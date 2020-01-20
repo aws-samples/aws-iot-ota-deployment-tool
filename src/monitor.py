@@ -19,7 +19,7 @@ if 'DEFAULT' not in config:
 
 jobId = config['DEFAULT']['jobId']
 debug = config['DEFAULT'].getboolean('debug')
-default_delay = int(config['DEFAULT']['default_delay'])
+defaultDelay = int(config['DEFAULT']['defaultDelay'])
 region = config['DEFAULT']['region']
 thingListFilePath =  config['DEFAULT']['thingList']
 
@@ -107,7 +107,7 @@ class monitor_tool():
             else:
                 logging.info('unexpected status: %s', status)
                 break;
-            time.sleep( default_delay )
+            time.sleep( defaultDelay )
 
 def main():
     monitor = monitor_tool()

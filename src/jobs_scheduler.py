@@ -22,9 +22,9 @@ class ota_deployment_tool():
         self.clean_up(deployConfig)
 
     def clean_up(self, deployConfig):
-        cleanUpCfg = deployConfig.get('cleanUpCfg')
-        streamId = deployConfig.get('streamId')
-        jobId = deployConfig.get('jobId')
+        cleanUpCfg = deployConfig['defaultConfig']['cleanUpCfg']
+        streamId = deployConfig['defaultConfig']['streamId']
+        jobId = deployConfig['defaultConfig']['jobId']
         if cleanUpCfg:
             logging.info('deleting old job')
             iot_interface.delete_job(jobId)
@@ -35,22 +35,22 @@ class ota_deployment_tool():
 
     def schedule_jobs(self, deployConfig):
         logging.info('creating new stream')
-        streamId = deployConfig['streamId']
-        fileId = deployConfig['fileId']
-        bucket = deployConfig['bucket']
-        binFileKey = deployConfig['binFileKey']
-        roleArn = deployConfig['roleArn']
-        jobId = deployConfig['jobId']
-        thingArnList = deployConfig['thingArnList']
-        jobDocumentSrc = deployConfig['jobDocumentSrc']
-        deviceCount = deployConfig['deviceCount']
-        default_delay = deployConfig['default_delay']
-        rounds = deployConfig['rounds']
+        streamId = deployConfig['defaultConfig']['streamId']
+        fileId = deployConfig['defaultConfig']['fileId']
+        bucket = deployConfig['defaultConfig']['bucket']
+        binFileKey = deployConfig['defaultConfig']['binFileKey']
+        roleArn = deployConfig['defaultConfig']['roleArn']
+        jobId = deployConfig['defaultConfig']['jobId']
+        thingArnList = deployConfig['defaultConfig']['thingArnList']
+        jobDocumentSrc = deployConfig['defaultConfig']['jobDocumentSrc']
+        deviceCount = deployConfig['defaultConfig']['deviceCount']
+        defaultDelay = deployConfig['defaultConfig']['defaultDelay']
+        rounds = deployConfig['defaultConfig']['rounds']
         status , err = iot_interface.create_stream(streamId, fileId, bucket, binFileKey ,roleArn)
         if status == False:
             logging.error(err)
             return
-        status , err = iot_interface.create_job(jobId, thingArnList, jobDocumentSrc)
+        status , err = iot_interface.create_job(deployConfig)
         if status == False:
             logging.error(err)
             return
@@ -91,7 +91,7 @@ class ota_deployment_tool():
             else:
                 logging.info('unexpected status: %s', status)
                 break;
-            time.sleep( default_delay )
+            time.sleep( defaultDelay )
 
 def main():
     config = configparser.ConfigParser()

@@ -470,7 +470,9 @@ Allows you to create criteria to abort a job. requires at least one Failure type
     * Minimum number of executed things before evaluating an abort rule.
 
 [TIMEOUT_CONFIG]
+
 Specifies the amount of time each device has to finish its execution of the job. The timer is started when the job execution status is set to IN_PROGRESS . If the job execution status is not set to another terminal state before the time expires, it will be automatically set to TIMED_OUT
+
 * inProgressTimeoutInMinutes:
     * Specifies the amount of time, in minutes, this device has to finish execution of this job. The timeout interval can be anywhere between 1 minute and 7 days (1 to 10080 minutes). The in progress timer can't be updated and will apply to all job executions for the job. Whenever a job execution remains in the IN_PROGRESS status for longer than this interval, the job execution will fail and switch to the terminal TIMED_OUT status.
 

@@ -385,7 +385,9 @@ description: [DEFAULT] section is required and the job will be deployed with the
 
 
 [PRESIGNED_URL_CONFIG]
+
 Configuration information for pre-signed S3 URLs.
+
 * roleArn:
     * The ARN of an IAM role that grants grants permission to download files from the S3 bucket where the job data/updates are stored. The role must also grant permission for IoT to download the files.
 * expiresInSec:

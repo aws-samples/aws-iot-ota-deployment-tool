@@ -394,7 +394,9 @@ Configuration information for pre-signed S3 URLs.
     * How long (in seconds) pre-signed URLs are valid. Valid values are 60 - 3600, the default value is 3600 seconds. Pre-signed URLs are generated when Jobs receives an MQTT request for the job document.
 
 [JOB_EXECUTE_ROLLOUT_CONFIG]
+
 Allows you to create a staged rollout of the job.
+
 * maximumPerMinute:
     * The maximum number of things that will be notified of a pending job, per minute. This parameter allows you to create a staged rollout.
 * useExponentialRateCfg:
@@ -419,7 +421,9 @@ Allows you to create a staged rollout of the job.
     * The threshold for number of succeeded things that will initiate the increase in rate of rollout.
 
 [ABORT_CONFIG]
+
 Allows you to create criteria to abort a job. requires at least one Failure type (useAllSubsection|useFailedSubsection|useRejectedSubsection|useTimedOutSubsection) needs to be set to True
+
 * useAllSubsection:
     * if useAllSubsection set True, means [ABORT_CONFIG_TYPE_ALL] section should be included in the config, if set false or useAllSubsection is not appeared in dev.ini [ABORT_CONFIG_TYPE_ALL] section will be ignored, you remove the flag to ignore it, noted that if useAllSubsection is set to True, the rest of the section is ignored and will be all applied with the params in [ABORT_CONFIG_TYPE_ALL] section
 * useFailedSubsection:

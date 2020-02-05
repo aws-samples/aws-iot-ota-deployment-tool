@@ -6,6 +6,7 @@ This document describes tools that can be used for deploying over-the-air (OTA) 
 
 * **Deploy OTA firmware updates using shell scripts**
 * **Deploy OTA firmware updates using python**
+* **Integration python ota tools with CICD tools**
 
 # Deploy OTA firmware updates using shell scripts:
 
@@ -16,11 +17,9 @@ In the first section we will go through how to setup stress test by using the sh
 ## Prerequisites:
 
 1. you need to have AWS account
-
-1. Install[AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-install.html)and [configure](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html)
-
-1. Create IAM user maker sure it has [OTA required user policy](https://docs.aws.amazon.com/freertos/latest/userguide/create-ota-user-policy.html)
-2. [Create an OTA update service role](https://docs.aws.amazon.com/freertos/latest/userguide/create-service-role.html)
+2. Install[AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-install.html)and [configure](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html)
+3. Create IAM user maker sure it has [OTA required user policy](https://docs.aws.amazon.com/freertos/latest/userguide/create-ota-user-policy.html)
+4. [Create an OTA update service role](https://docs.aws.amazon.com/freertos/latest/userguide/create-service-role.html)
 
 ## Usage:
 
@@ -44,9 +43,9 @@ sh main.sh <ThingListFile> <BinFile> <RoleARN > <JobID> <Rounds> <StreamID>
 main.sh creates the job,stream documents, upload the bin file to S3, parse the thingLists.txt and then starts a deployment or repeated stress test with the parameters
 
 * ThingListFile:
-    *  for example Thinglist.txt like the above example
+    *  for example Thinglist.txt like the above example(do not include spaces in the path)
 * BinFile:  
-    * the binary that you wish to update, it will be uploaded to S3 by the script durring the test
+    * the binary that you wish to update, it will be uploaded to S3 by the script durring the test(do not include spaces in the path)
 * RoleARN: 
     * the ota role you’ve created, it should look like “**arn:aws:iam::123456789:role/your_ota_role**“ and given [OTA update service role](https://docs.aws.amazon.com/freertos/latest/userguide/create-service-role.html) access
 * JobID:
@@ -55,6 +54,8 @@ main.sh creates the job,stream documents, upload the bin file to S3, parse the t
     * when you use this tool for deploying an OTA firmware update, set this value to 1. Use a value larger than 1 for repeated testing purpose. This tool will deploy the same OTA job repeatedly for $Rounds times; if failure happens, the deployment will stop and the rest of the $Rounds will be skipped.
 * StreamID:
     * input the stream id you would like to use in the test. The stream will be deleted after the test is completed. 
+* PrivateKey (optional):
+    * the private key in base64 format, it is optional. We will keep md5 in JSON file as default, if user didn't provide this item, otherwise use signature instead of md5.
 
 ### Example:
 
@@ -170,7 +171,7 @@ sh OtaStressStart.sh <ThingListFile> <JobID> <Rounds> <job.json> <create-stream.
 OtaStressStart.sh parse the thingLists.txt and then starts the a deployment or repeated stress test. If you want to use your own job/stream documents, you can run OtaStressStart.sh without OtaEnvBuild.sh, and deploy jobs with your customized job/stream documents 
 
 * ThingListFile:
-    *  for example Thinglist.txt like the above example
+    *  for example Thinglist.txt like the above example(do not include spaces in the path)
 * JobID:
     * input the job id you would like to use in the test, and you can track the status on IoT Console, the job will be deleted after the test is completed. 
     * The scripts will automatically create the job document and create the job, but you cab also follow [this documentation](https://docs.aws.amazon.com/cli/latest/reference/iot/create-job.html) to customize the job document information. 
@@ -239,17 +240,17 @@ update the **dev.ini** in **src** folder
 [DEFAULT]
 thingList = thingsList.txt
 binName = test.bin
-roleArn = arn:aws:iam::123456789:role/<your_role>
-jobId = JobPython5566
+roleArn = arn:aws:iam::12345678:role/<your_role>
+jobId = <yourJobId>
 rounds = 34
 bucket = iot-ota-deployment-tool
-cleanUpCfg = False
+cleanUpCfg = True
 debug = False
 defaultDelay = 5
 region = us-east-1
-streamId = StreamPython5566
+streamId = <yourSteamId>
 iotApiSleepTime = 50
-fileChunkSize = 8192
+fileChunckSize = 8192
 targetSelection = SNAPSHOT
 useCustomJobDocument = False
 usePresignedUrlConfig = False
@@ -314,9 +315,9 @@ inProgressTimeoutInMinutes = 60
 description: [DEFAULT] section is required and the job will be deployed with the following params
 
 * thingList:
-    *  for example Thinglist.txt like the above example
+    *  for example Thinglist.txt like the above example(do not include spaces in the path)
 * binName:  
-    * the binary that you wish to update, it will be uploaded to S3 by the script durring the test
+    * the binary that you wish to update, it will be uploaded to S3 by the script durring the test(do not include spaces in the path)
 * roleArn: 
     * the ota role you’ve created, it should look like “**arn:aws:iam::123456789:role/your_ota_role**“ and given [OTA update service role](https://docs.aws.amazon.com/freertos/latest/userguide/create-service-role.html) access
 * jobId:
@@ -336,7 +337,7 @@ description: [DEFAULT] section is required and the job will be deployed with the
 * region:
     * the region that will be used in this test
 * iotApiSleepTime:
-    * the delay time for each time calling AWS IoT api
+    * the delay time for each time calling AWS IoT api (suggest iotApiSleepTime > 50 at least)
 * fileChunkSize:
     * To calculate md5 sum of the file, the file will be divided into chunks and calculate the hash value and combine the results as the file’s md5 sum value, if the file can not be divide by the chunk size, the remainder will be hashed alone.
 * targetSelection:
@@ -366,7 +367,7 @@ description: [DEFAULT] section is required and the job will be deployed with the
         "md5sum": "afcba86284d600cd21f54dca7c6d8bb6"
     }
     ```
-    *  set to url means user will use a customized job document in a s3 remote url in  **jobDocSrcUrl**, noted that the document will be donwloaded and the deployment tools will append the following elements in to the docuemnt while generated at run time:
+    *  set to url means user will use a customized job document in a s3 remote url in  **jobDocSrcUrl**, noted that the document will be downloaded and the deployment tools will append the following elements in to the docuemnt while generated at run time:
     ```
     {
         "command": "fota",
@@ -550,3 +551,164 @@ job_temp.json after
             "md5sum": "1257723f145356a61311084f1e45d592"
     }
 
+# Deploy Monitor Tool using Cloudformation Template
+
+***Currently the monitor tool only reacts on downloadTime metrics, it will send email/sms to designated endpoint defined by the template parameters.***
+
+## Parameters
+- AlarmEmailEndpoint: Email address to notify when alarm goes off.
+- AlarmSMSEndpoint: Mobile phone number to notify when alarm goes off.
+- DownloadTimeDatapointsToAlarm: The number M in "Alarm goes off when M out of N data points violates the threshold".
+- DownloadTimeEvaluationPeriod: The number N in "Alarm goes off when M out of N data points violates the threshold".
+- DownloadTimePercentile: Percentile statistics of the metrics.
+- DownloadTimeUpperLimit: Upper threshold limit of download time in OTA job.
+
+# Resources
+- An IoT Rule that listens to JobExecution update terminal events
+- A Lambda function, with an execution role, that converts the JobExecution update events to CloudWatch downloadTime metrics
+- A CloudWatch alarm that monitor the downloadTime metrics. It will transit to alarm state and publish message to an SNS topic when a percentile of the downloadTime violates an upper limit. (e.g. p99 downloadTime is above 1 hr)
+- An SNS topic that is subscribed by an email address and mobile phone number for alarm notification purpose.
+
+
+
+# Integration python ota tools with CICD tools:
+
+## Description:
+
+When the device scale goes up to 1,000,000+, you might need to deploy the new software by groups or by batch deployment, in this section we will go through how to do this by integrating the python tools and CICD tools to help you schedule the jobs and flow control
+
+## Prerequisites:
+
+1. run through the Deploy **OTA firmware updates using python** section
+2. use your favorite CICD tools for example: [Jenkins](https://jenkins.io/doc/pipeline/tour/getting-started/) and install Jenkins on a local machine or EC2 (please noted that Jenkins can be replaced with [codepipeline](https://docs.aws.amazon.com/codepipeline/latest/userguide/welcome.html) )
+3. Create IAM user maker sure it has [DynamoDB required user policy](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/using-identity-based-policies.html#access-policy-examples-for-sdk-cli.example1) and the policies in **OTA firmware updates using python**
+
+## Overview:
+
+![](./docs/integration_jenkins.png)
+
+## Description
+
+the above architecture is a framework for deploying OTA with Jenkins and python tools
+1. users can use applications or directly use the add_job_schedule.py to add new jobs schedule
+
+2. the new jobs schedule will be added into DynamoDB (the DynamoDB schema is detailed in **Setup** section) and be queued.
+
+3. Jenkins will use a scheduled jobs with fetch_job_schedule.py to fetch the job schedule and it will later be deployed
+
+4. jobs_scheduler.py will deploy the jobs according to the job record.
+
+5. the Jobs is created in AWS IoT Core and deployed to the targets
+
+6. a monitor.py can be used for user to check the job status
+
+## Setup
+
+all you need to do is
+1. setup a DynamoDB table
+2. setup a Jenkins job and schedule it periodically, running the python tools
+3. use add_job_schedule.py when you have new bin files
+
+
+### DynamoDB setup
+
+here is the schema used in the exampl, you can find it in the ***deployment/db_table_config.json***
+
+```
+    {
+        "Table": {
+            "TableArn": "arn:aws:dynamodb:us-east-1:123456789:table/job_config_table",
+            "AttributeDefinitions": [
+                {
+                    "AttributeName": "jobStatus",
+                    "AttributeType": "S"
+                }, 
+                {
+                    "AttributeName": "timestamp",
+                    "AttributeType": "S"
+                }
+            ], 
+            "ProvisionedThroughput": {
+                "NumberOfDecreasesToday": 0,
+                "WriteCapacityUnits": 5,
+                "ReadCapacityUnits": 5
+            },
+            "TableSizeBytes": 346, 
+            "TableName": "job_config_table",
+            "TableStatus": "ACTIVE",
+            "TableId": "26ae4112-2be3-47d4-8f2b-d633c7400bdb",
+            "KeySchema": [
+                {
+                    "KeyType": "HASH",
+                    "AttributeName": "jobStatus"
+                },
+                {
+                    "KeyType": "RANGE",
+                    "AttributeName": "timestamp"
+                }
+            ],
+            "ItemCount": 1,
+            "CreationDateTime": 1579226971.331
+        }
+    }
+```
+
+
+### Jenkins setup
+
+here we will walk through how to setup the jenkins, or you can modify and import the xml file in ***deployment/jenkinsConfig.xml***
+
+#### General
+
+![](./docs/jenkins_general.png)
+
+#### Source Code Management
+
+![](./docs/jenkins_source_code_managment.png)
+
+#### Build Trigger
+
+![](./docs/jenkins_build_trigger.png)
+
+#### Build
+
+![](./docs/jenkins_build.png)
+
+
+### add_job_schedule.py
+users can use ***add_job_schedule.py*** to add the job record to the job queue (in DynamoDB)
+
+herer is the parameters for ***add_job_schedule.py***
+
+```
+    "-m", "--method", required=True
+    "-f", "--binFile", required=True
+    "-tb", "--tableName", required=True
+    "-b", "--bucket", required=True
+    "-r", "--region", required=True
+    "-d", "--devIni", required=False
+    "-l", "--thingList", required=False
+```
+
+* method(required):
+    * the value for method can be ***submit*** or ***create***, otherwise it will cause exception
+    * submit: if method is set to submit, it means that users have a ***dev.ini*** File((example: dev_20200101.ini) ) that is ready to use for job deployments and can be scheduled. Please noted when using submit value, devIni and the thingList can not be None
+    * create: if method is set to create, it means that users will create a new dev*.ini file with the template or last dev.ini file and walk through the configure wizard
+
+* binFile(required):  
+    * the binary that you wish to update, it will be uploaded to S3 and will be dployed by the python tools
+
+* tableName(required):  
+    * the DynamoDB table you've created in ***DynamoDB setup*** section, Make sure that the table exists in the  ***--region*** input parameters
+
+* bucket(required):  
+    * the bucket you will use to upload the bin file, dev*.ini file ((example: dev_20200101.ini) ) and the thinglistFile. Make sure that the bucket exists in the  ***--region*** input parameters
+
+* region(required):  
+    * the region you will use for DynamoDB table, and s3 bucket to upload the job configs, noted that you can use different region in the dev*.ini file , the --region used in add_job_schedule.py is where you queue the jobs, but you can use the dev*.ini file to deploy different jobs into the region defined in dev*.ini
+
+* devIni(optional):  
+    * the dev*.ini file(example: dev_20200101.ini) you will assign for the job
+
+* thingList(optional):  
+    * the thingList file(example: thingList.txt) you will assign for the job

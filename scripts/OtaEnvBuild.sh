@@ -11,12 +11,19 @@ s3Key=""
 streamId=$3
 fileId=$( od -An -N1 -i /dev/random | head -1 |sed 's/[[:space:]]//g' )
 Rand=$( od -An -N3 -i /dev/random | head -1 |sed 's/[[:space:]]//g' )
-#### handling md5 sum ######
-md5sum=123
-if [[ "$OSTYPE" == "linux-gnu" ]]; then #Linux
-        md5sum=$(md5sum "${binFile}" | awk '{ print $4 }')
-elif [[ "$OSTYPE" == "darwin"* ]]; then #MAC OS
-        md5sum=$(md5 "${binFile}" | awk '{ print $4 }')
+
+#### handling md5 sum or code sign signature ######
+if [ -z "$4" ] ;then
+    if [[ "$OSTYPE" == "linux-gnu" ]]; then #Linux
+            md5sum=$(md5sum "${binFile}" | awk '{ print $4 }')
+    elif [[ "$OSTYPE" == "darwin"* ]]; then #MAC OS
+            md5sum=$(md5 "${binFile}" | awk '{ print $4 }')
+    fi
+else
+    signAlgo=SHA256withECDSA
+    openssl dgst -sha256 -sign $4 $1 > signature.der
+    signature=$( base64 signature.der | xargs echo | sed 's/ //g' )
+    echo $signature
 fi
 
 
@@ -62,7 +69,21 @@ cat > ${PWD}/example-job.json << EOF
     "fileId": ${fileId},
     "fileSize": ${fileSize},
     "imageVer": "${version}",
+EOF
+
+### add md5 sum as default
+if [ -z "$4"  ] ;then
+    cat >> ${PWD}/example-job.json << EOF
     "md5sum": "${md5sum}"
 }
-cat example-job.json
 EOF
+
+### add signature if user provide private key
+else
+    cat >> ${PWD}/example-job.json << EOF
+    "signature": "${signature}",
+    "signatureAlgorithm": "${signAlgo}"
+}
+EOF
+fi
+

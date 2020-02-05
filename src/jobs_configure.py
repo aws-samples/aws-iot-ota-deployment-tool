@@ -3,7 +3,7 @@ import json
 import boto3
 import time
 import hashlib
-import iot_interface
+import s3_interface
 import logging
 import sys
 import configparser
@@ -19,8 +19,8 @@ config.read('dev.ini')
 if 'DEFAULT' not in config:
     raise Exception('invalid config')
 region = config['DEFAULT']['region']
+s3_interface.init(region)
 
-s3 = boto3.client('s3', region_name=region)
 configMap = {
     'PRESIGNED_URL_CONFIG' : 'usePresignedUrlConfig',
     'CUSTOM_JOB_DOCUMENT' : 'useCustomJobDocument',
@@ -46,16 +46,6 @@ def is_config_in_use(config, sectionName, checkInSection):
     else:
         status = False
     return status
-
-def upload_file_to_s3(fileName, bucket, key):
-    logging.info( "upload file %s to bucket: %s", fileName, bucket)
-    try:
-        with open(fileName, 'rb') as objectData:
-            s3.put_object(Body=objectData, Bucket=bucket, Key=key)
-    except ClientError as e:
-        logging.warn(str(e))
-        return False
-    return True
 
 def parse_thingList(thingListFilePath):
     logging.info( "parse_thingList..... with path %s", thingListFilePath)
@@ -112,7 +102,7 @@ def create_job_document(jobDocConfig):
     with open('job.json', 'w') as outfile:
         json.dump(data, outfile)
         key='job' + str(fileId) + '.json'
-    status = upload_file_to_s3('job.json', bucket, key)
+    status = s3_interface.upload_file_to_s3('job.json', bucket, key)
     jobDocumentSrc = 'https://{}.s3.amazonaws.com/job{}.json'.format(bucket, str(fileId))
     return status, jobDocumentSrc
 
@@ -219,7 +209,7 @@ def default_section_parser(config):
     thingArnList, deviceCount, thingNameList = parse_thingList(thingListFilePath)
     if deviceCount < 1:
         raise Exception('thing list should not be empty')
-    status = upload_file_to_s3(binName, bucket, binFileKey)
+    status = s3_interface.upload_file_to_s3(binName, bucket, binFileKey)
     if status == False:
         raise Exception('job configure upload binFile failed')
     defaultConfig['thingArnList'] = thingArnList

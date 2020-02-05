@@ -14,7 +14,6 @@ config = configparser.ConfigParser()
 config.read('dev.ini')
 if 'DEFAULT' not in config:
     raise Exception('invalid config')
-thingList =  config['DEFAULT']['thingList']
 iotApiSleepTime = int(config['DEFAULT']['iotApiSleepTime'])
 region = config['DEFAULT']['region']
 

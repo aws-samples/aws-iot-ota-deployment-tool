@@ -1,0 +1,270 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Metadata": {
+        "AWS::CloudFormation::Designer": {
+            "cd1e8bb9-ea9d-40af-af82-3d92d451f062": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 200,
+                    "y": 120
+                },
+                "z": 0,
+                "embeds": []
+            },
+            "369a9386-52f6-44ab-b33f-c8dd4c9703bf": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 350,
+                    "y": 220
+                },
+                "z": 0,
+                "embeds": []
+            },
+            "4b648b4e-cf0d-415d-9b33-b1396b5052e1": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 440,
+                    "y": 90
+                },
+                "z": 0,
+                "embeds": []
+            },
+            "c35a9cae-bd78-4a16-b42d-a002d6349c99": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 630,
+                    "y": 60
+                },
+                "z": 0,
+                "embeds": []
+            },
+            "523d4e76-4dfd-4b7c-9f6c-e4ba488e2e4b": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 628.8786344471449,
+                    "y": 182.8669606463508
+                },
+                "z": 0,
+                "embeds": []
+            }
+        }
+    },
+    "Parameters": {
+        "DownloadTimePercentile": {
+            "Description": "Percentile statistics of the downloadTime metric.",
+            "Type": "String",
+            "Default": "p99",
+            "AllowedValues": [
+                "p50",
+                "p90",
+                "p95",
+                "p99",
+                "p99.9",
+                "p100"
+            ],
+            "ConstraintDescription": "must be one of p50, p90, p95, p99, p99.9, p100."
+        },
+        "DownloadTimeUpperLimit": {
+            "Description": "Maximum allowed download time.",
+            "Type": "Number",
+            "Default": 3600
+        },
+        "DownloadTimeEvaluationPeriod": {
+            "Description": "The N value - Goes off when M out of N datapoints violate the threshold.",
+            "Type": "Number",
+            "Default": 5
+        },
+        "DownloadTimeDatapointsToAlarm": {
+            "Description": "The M value - Goes off when M out of N datapoints violate the threshold.",
+            "Type": "Number",
+            "Default": 3
+        },
+        "AlarmEmailEndpoint": {
+            "Description": "The email to notify when alarm goes off.",
+            "Type": "String",
+            "MaxLength": 50
+        },
+        "AlarmSMSEndpoint": {
+            "Description": "The mobile phone number to receive SMS when alarm goes off.",
+            "Type": "String",
+            "MaxLength": 20
+        }
+    },
+    "Resources": {
+        "JobExecutionEventRule": {
+            "Type": "AWS::IoT::TopicRule",
+            "Properties": {
+                "TopicRulePayload": {
+                    "Actions": [
+                        {
+                            "Lambda": {
+                                "FunctionArn": {
+                                    "Fn::GetAtt": [
+                                        "MetricGeneratorLambda",
+                                        "Arn"
+                                    ]
+                                }
+                            }
+                        }
+                    ],
+                    "Description": "IoT Rule for terminal job execution events.",
+                    "RuleDisabled": false,
+                    "Sql": "SELECT * FROM '$aws/events/jobExecution/#'"
+                }
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "cd1e8bb9-ea9d-40af-af82-3d92d451f062"
+                }
+            },
+            "DependsOn": [
+                "MetricGeneratorLambda"
+            ]
+        },
+        "MetricGeneratorLambda": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+                "Code": {
+                    "S3Bucket": "ota-monitor-tool",
+                    "S3Key": "IoTJobExecutionMetricsGenerator.zip"
+                },
+                "Handler": "metrics_generator.lambda_handler",
+                "Role": {
+                    "Fn::GetAtt": [
+                        "LambdaExecutionRole",
+                        "Arn"
+                    ]
+                },
+                "Runtime": "python3.8",
+                "Timeout": 5
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "369a9386-52f6-44ab-b33f-c8dd4c9703bf"
+                }
+            },
+            "DependsOn": [
+                "LambdaExecutionRole"
+            ]
+        },
+        "LambdaExecutionRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "AssumeRolePolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": [
+                                    "lambda.amazonaws.com"
+                                ]
+                            },
+                            "Action": [
+                                "sts:AssumeRole"
+                            ]
+                        }
+                    ]
+                },
+                "Policies": [
+                    {
+                        "PolicyDocument": {
+                            "Version": "2012-10-17",
+                            "Statement": [
+                                {
+                                    "Action": [
+                                        "cloudwatch:*"
+                                    ],
+                                    "Effect": "Allow",
+                                    "Resource": "*"
+                                }
+                            ]
+                        },
+                        "PolicyName": "InlinePolicy"
+                    }
+                ]
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "4b648b4e-cf0d-415d-9b33-b1396b5052e1"
+                }
+            }
+        },
+        "P99DownloadTimeUpperLimitAlarm": {
+            "Type": "AWS::CloudWatch::Alarm",
+            "Properties": {
+                "Namespace": "IoT:OTA:JobExecution",
+                "MetricName": "downloadTime",
+                "Unit": "Seconds",
+                "Period": 60,
+                "ExtendedStatistic": {
+                    "Ref": "DownloadTimePercentile"
+                },
+                "ComparisonOperator": "GreaterThanThreshold",
+                "DatapointsToAlarm": {
+                    "Ref": "DownloadTimeDatapointsToAlarm"
+                },
+                "EvaluationPeriods": {
+                    "Ref": "DownloadTimeEvaluationPeriod"
+                },
+                "Threshold": {
+                    "Ref": "DownloadTimeUpperLimit"
+                },
+                "AlarmActions": [
+                    {
+                        "Ref": "AlarmTopic"
+                    }
+                ]
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "c35a9cae-bd78-4a16-b42d-a002d6349c99"
+                }
+            },
+            "DependsOn": [
+                "AlarmTopic"
+            ]
+        },
+        "AlarmTopic": {
+            "Type": "AWS::SNS::Topic",
+            "Properties": {
+                "DisplayName": "OTA-Alarm-Topic",
+                "TopicName": "ota-monitor-alarm",
+                "Subscription": [
+                    {
+                        "Endpoint": {
+                            "Ref": "AlarmEmailEndpoint"
+                        },
+                        "Protocol": "email"
+                    },
+                    {
+                        "Endpoint": {
+                            "Ref": "AlarmSMSEndpoint"
+                        },
+                        "Protocol": "sms"
+                    }
+                ]
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "523d4e76-4dfd-4b7c-9f6c-e4ba488e2e4b"
+                }
+            }
+        }
+    }
+}

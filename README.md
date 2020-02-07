@@ -167,7 +167,9 @@ stream document
 ### Running OtaStressStart.sh:
 
 sh OtaStressStart.sh <ThingListFile> <JobID> <Rounds> <job.json> <create-stream.json> <StreamID>
+
 **Description**:
+
 OtaStressStart.sh parse the thingLists.txt and then starts the a deployment or repeated stress test. If you want to use your own job/stream documents, you can run OtaStressStart.sh without OtaEnvBuild.sh, and deploy jobs with your customized job/stream documents 
 
 * ThingListFile:

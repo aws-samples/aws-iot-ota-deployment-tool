@@ -65,35 +65,6 @@
         }
     },
     "Parameters": {
-        "DownloadTimePercentile": {
-            "Description": "Percentile statistics of the downloadTime metric.",
-            "Type": "String",
-            "Default": "p99",
-            "AllowedValues": [
-                "p50",
-                "p90",
-                "p95",
-                "p99",
-                "p99.9",
-                "p100"
-            ],
-            "ConstraintDescription": "must be one of p50, p90, p95, p99, p99.9, p100."
-        },
-        "DownloadTimeUpperLimit": {
-            "Description": "Maximum allowed download time.",
-            "Type": "Number",
-            "Default": 3600
-        },
-        "DownloadTimeEvaluationPeriod": {
-            "Description": "The N value - Goes off when M out of N datapoints violate the threshold.",
-            "Type": "Number",
-            "Default": 5
-        },
-        "DownloadTimeDatapointsToAlarm": {
-            "Description": "The M value - Goes off when M out of N datapoints violate the threshold.",
-            "Type": "Number",
-            "Default": 3
-        },
         "AlarmEmailEndpoint": {
             "Description": "The email to notify when alarm goes off.",
             "Type": "String",
@@ -204,41 +175,6 @@
                     "id": "4b648b4e-cf0d-415d-9b33-b1396b5052e1"
                 }
             }
-        },
-        "P99DownloadTimeUpperLimitAlarm": {
-            "Type": "AWS::CloudWatch::Alarm",
-            "Properties": {
-                "Namespace": "IoT:OTA:JobExecution",
-                "MetricName": "downloadTime",
-                "Unit": "Seconds",
-                "Period": 60,
-                "ExtendedStatistic": {
-                    "Ref": "DownloadTimePercentile"
-                },
-                "ComparisonOperator": "GreaterThanThreshold",
-                "DatapointsToAlarm": {
-                    "Ref": "DownloadTimeDatapointsToAlarm"
-                },
-                "EvaluationPeriods": {
-                    "Ref": "DownloadTimeEvaluationPeriod"
-                },
-                "Threshold": {
-                    "Ref": "DownloadTimeUpperLimit"
-                },
-                "AlarmActions": [
-                    {
-                        "Ref": "AlarmTopic"
-                    }
-                ]
-            },
-            "Metadata": {
-                "AWS::CloudFormation::Designer": {
-                    "id": "c35a9cae-bd78-4a16-b42d-a002d6349c99"
-                }
-            },
-            "DependsOn": [
-                "AlarmTopic"
-            ]
         },
         "AlarmTopic": {
             "Type": "AWS::SNS::Topic",

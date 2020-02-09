@@ -479,6 +479,43 @@ Specifies the amount of time each device has to finish its execution of the job.
 * inProgressTimeoutInMinutes:
     * Specifies the amount of time, in minutes, this device has to finish execution of this job. The timeout interval can be anywhere between 1 minute and 7 days (1 to 10080 minutes). The in progress timer can't be updated and will apply to all job executions for the job. Whenever a job execution remains in the IN_PROGRESS status for longer than this interval, the job execution will fail and switch to the terminal TIMED_OUT status.
 
+[ALARM_CONFIG]
+
+* alarmList:
+    * Specifies a comma-separated list of alarm names to be added during the deployment. These alarms would be deleted during the clean-up phase of the deployment.
+
+[ALARM_CONFIG_<alarm_name>]
+
+This config section specifies the details of an alarm listed in the `alarmList` in the `ALARM_CONFIG` section. `<alarm_name>` must match the name of the alarm appeared in `alarmList`. For example:
+
+```
+[ALARM_CONFIG]
+alarmList=MyAlarm1,MyAlarm2
+
+[ALARM_CONFIG_MyAlarm1]
+# MyAlarm1 details here.
+
+[ALARM_CONFIG_MyAlarm2]
+# MyAlarm2 details here.
+```
+
+* namespace: namespace of the metric.
+* metricName: name of the metric.
+* stat:
+    * statistic of the metric. Supported values are `SampleCount|Average|Sum|Minimum|Maximum`, or any value between `p0.0` and `p100`.
+* period:
+    * time-period of the metric in seconds, must be a multiple of 60.
+* alarmType: 
+    * specifies how the threshold is treated in this alarm. It can be one of these values:
+        * `upper`: the threshold value is treated as an upper limit. Datapoints above this value is treated as violating the threshold.
+        * `lower`: the threshold value is treated as a lower limit. Datapoints below this value is treated as violating the threshold.
+* evaluationPeriods:
+    * The number of periods over which data is compared to the specified threshold. If you are setting an alarm that requires that a number of consecutive data points be breaching to trigger the alarm, this value specifies that number. If you are setting an "M out of N" alarm, this value is the N.
+    An alarm's total current evaluation period can be no longer than one day, so this number multiplied by Period cannot be more than 86,400 seconds.
+* datapointsToAlarm:
+    * The number of data points that must be breaching to trigger the alarm. This is used only if you are setting an "M out of N" alarm. In that case, this value is the M. For more information, see [Evaluating an Alarm](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/AlarmThatSendsEmail.html#alarm-evaluation) in the Amazon CloudWatch User Guide .
+* threshold: threshold value of the alarm.
+* snsTopics: topics to be notified when the alarm is in ALARM state.
 
 ### 
 

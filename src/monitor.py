@@ -1,14 +1,11 @@
-import os
-import json
 import boto3
 import time
-import iot_interface
 import logging
 import sys
 import configparser
 import os.path as path
-from botocore.exceptions import ClientError
 
+from aws_interfaces import iot_interface
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 # Initializing parameters:
@@ -91,7 +88,7 @@ class monitor_tool():
             elif status == 'IN_PROGRESS':
                 logging.info('jobId %s IN_PROGRESS', jobId)
                 thingNameList = self.thingNameList
-                for thingName in thingNameList: 
+                for thingName in thingNameList:
                     job_exe_dsb, err = iot_interface.get_job_exe_info(jobId, thingName)
                     if job_exe_dsb:
                         thing_status = job_exe_dsb.get('status')

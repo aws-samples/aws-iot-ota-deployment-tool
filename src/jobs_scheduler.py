@@ -1,24 +1,21 @@
-import os
-import json
-import boto3
 import time
-import hashlib
-import iot_interface
 import jobs_configure
 import logging
 import sys
 import configparser
-from random import seed
-from random import randint
-from botocore.exceptions import ClientError
 
+from aws_interfaces import iot_interface
+from aws_interfaces.alarm_interface import AlarmInterface
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+
 
 class ota_deployment_tool():
     def __init__(self, config):
         deployConfig = jobs_configure.init_config(config)
         self.deployConfig = deployConfig
+
+        self.alarm_interface = AlarmInterface(deployConfig['region'])
         self.clean_up(deployConfig)
 
     def clean_up(self, deployConfig):
@@ -30,6 +27,8 @@ class ota_deployment_tool():
             iot_interface.delete_job(jobId)
             logging.info('deleting old stream')
             iot_interface.delete_stream(streamId)
+            logging.info('deleting old alarms')
+            self.alarm_interface.delete_alarms(deployConfig['alarmConfigs'])
         else:
             logging.info('skipping clean_up due to cleanUpCfg set to false')
 
@@ -46,12 +45,18 @@ class ota_deployment_tool():
         deviceCount = deployConfig['defaultConfig']['deviceCount']
         defaultDelay = deployConfig['defaultConfig']['defaultDelay']
         rounds = deployConfig['defaultConfig']['rounds']
-        status , err = iot_interface.create_stream(streamId, fileId, bucket, binFileKey ,roleArn)
-        if status == False:
+
+        status, err = self.alarm_interface.create_alarms(deployConfig['alarmConfigs'])
+        if not status:
             logging.error(err)
             return
-        status , err = iot_interface.create_job(deployConfig)
-        if status == False:
+
+        status, err = iot_interface.create_stream(streamId, fileId, bucket, binFileKey, roleArn)
+        if not status:
+            logging.error(err)
+            return
+        status, err = iot_interface.create_job(deployConfig)
+        if not status:
             logging.error(err)
             return
         job_complete_counter = 0
@@ -65,33 +70,36 @@ class ota_deployment_tool():
                 numberOfSucceededThings = job_dsb.get('jobProcessDetails', {}).get('numberOfSucceededThings')
                 if numberOfSucceededThings == deviceCount:
                     job_complete_counter = job_complete_counter + 1
-                    logging.info('deviceCount: %d matches numberOfSucceededThings: %d job completed with success', deviceCount, numberOfSucceededThings)
-                    logging.info('jobId : %s  completed , job_complete_counter: %d',jobId, job_complete_counter)
-                    logging.info('jobId %s completed', jobId )
+                    logging.info('deviceCount: %d matches numberOfSucceededThings: %d job completed with success',
+                                 deviceCount, numberOfSucceededThings)
+                    logging.info('jobId : %s  completed , job_complete_counter: %d', jobId, job_complete_counter)
+                    logging.info('jobId %s completed', jobId)
                     self.clean_up(deployConfig)
                     if job_complete_counter < rounds:
                         logging.info('creating new stream')
-                        status , err = iot_interface.create_stream(streamId, fileId, bucket, binFileKey ,roleArn)
-                        if status == False:
+                        status, err = iot_interface.create_stream(streamId, fileId, bucket, binFileKey, roleArn)
+                        if not status:
                             logging.error(err)
                             return
                         logging.info('creating new job, thingArnList: %s', thingArnList)
-                        status , err = iot_interface.create_job(jobId, thingArnList , jobDocumentSrc)
-                        if status == False:
+                        status, err = iot_interface.create_job(jobId, thingArnList, jobDocumentSrc)
+                        if not status:
                             logging.error(err)
                             return
                 else:
-                    logging.info('deviceCount: %d does not matches numberOfSucceededThings: %d job completed with failure', deviceCount, numberOfSucceededThings)
-                    break;
+                    logging.info('deviceCount: %d does not matches numberOfSucceededThings: %d job completed with failure',
+                                 deviceCount, numberOfSucceededThings)
+                    break
             elif status == 'IN_PROGRESS':
                 logging.info('jobId: %s  IN_PROGRESS: ', jobId)
             elif status == 'CANCELED' or status == 'DELETION_IN_PROGRESS' or status == 'DELETION_IN_PROGRESS':
                 logging.info('unexpected failure with status: %s', status)
-                break;
+                break
             else:
                 logging.info('unexpected status: %s', status)
-                break;
-            time.sleep( defaultDelay )
+                break
+            time.sleep(defaultDelay)
+
 
 def main():
     config = configparser.ConfigParser()

@@ -1,32 +1,25 @@
 import os
 import json
-import boto3
 import time
 import hashlib
-import s3_interface
 import logging
 import sys
-import configparser
+
 from random import seed
 from random import randint
-from botocore.exceptions import ClientError
+from aws_interfaces import s3_interface
 
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 # Initializing parameters:
-config = configparser.ConfigParser()
-config.read('dev.ini')
-if 'DEFAULT' not in config:
-    raise Exception('invalid config')
-region = config['DEFAULT']['region']
-s3_interface.init(region)
+s3Interface = s3_interface
 
 configMap = {
-    'PRESIGNED_URL_CONFIG' : 'usePresignedUrlConfig',
-    'CUSTOM_JOB_DOCUMENT' : 'useCustomJobDocument',
-    'JOB_EXECUTE_ROLLOUT_CONFIG' : 'useJobExecutionsRolloutConfig',
-    'ABORT_CONFIG' : 'useAbortConfig',
-    'TIMEOUT_CONFIG' : 'useTimeoutConfig',
+    'PRESIGNED_URL_CONFIG': 'usePresignedUrlConfig',
+    'CUSTOM_JOB_DOCUMENT': 'useCustomJobDocument',
+    'JOB_EXECUTE_ROLLOUT_CONFIG': 'useJobExecutionsRolloutConfig',
+    'ABORT_CONFIG': 'useAbortConfig',
+    'TIMEOUT_CONFIG': 'useTimeoutConfig',
     'EXP_RATE_CONFIG': 'useExponentialRateCfg',
     'INCREASE_CRITERIA': 'useRateIncreaseCriteria',
     'ABORT_CONFIG_TYPE_ALL': 'useAllSubsection',
@@ -35,20 +28,23 @@ configMap = {
     'ABORT_CONFIG_TYPE_TIMED_OUT': 'useTimedOutSubsection'
 }
 
+
 def is_config_in_use(config, sectionName, checkInSection):
     checkConfig = configMap[sectionName]
     useConfig = config[checkInSection].getboolean(checkConfig)
     if useConfig:
         if sectionName not in config:
-            raise Exception('invalid config. %s set True, requires %s section', checkConfig, sectionName)
+            raise Exception('invalid config. %s set True, requires %s section',
+                            checkConfig, sectionName)
         else:
             status = True
     else:
         status = False
     return status
 
+
 def parse_thingList(thingListFilePath):
-    logging.info( "parse_thingList..... with path %s", thingListFilePath)
+    logging.info("parse_thingList..... with path %s", thingListFilePath)
     thingArnList = []
     thingNameList = []
     deviceCount = 0
@@ -57,7 +53,7 @@ def parse_thingList(thingListFilePath):
         for line in fp:
             if len(line) > 1:
                 thingArn = line.strip()
-                temp, thingName = thingArn.split(':thing/')
+                _, thingName = thingArn.split(':thing/')
                 thingArnList.append(str(thingArn))
                 thingNameList.append(thingName)
                 deviceCount += 1
@@ -65,8 +61,9 @@ def parse_thingList(thingListFilePath):
     logging.info(thingArnList)
     return thingArnList, deviceCount, thingNameList
 
+
 def md5_check_sum(filePath, fileChunkSize):
-    logging.info( "md5_check_sum.....")
+    logging.info("md5_check_sum.....")
     with open(filePath, 'rb') as fh:
         m = hashlib.md5()
         while True:
@@ -76,6 +73,7 @@ def md5_check_sum(filePath, fileChunkSize):
             m.update(data)
         logging.info(m.hexdigest())
         return m.hexdigest()
+
 
 def create_job_document(jobDocConfig):
     md5sum = jobDocConfig['md5sum']
@@ -101,10 +99,11 @@ def create_job_document(jobDocConfig):
 
     with open('job.json', 'w') as outfile:
         json.dump(data, outfile)
-        key='job' + str(fileId) + '.json'
-    status = s3_interface.upload_file_to_s3('job.json', bucket, key)
+        key = 'job' + str(fileId) + '.json'
+    status = s3Interface.upload_file_to_s3('job.json', bucket, key)
     jobDocumentSrc = 'https://{}.s3.amazonaws.com/job{}.json'.format(bucket, str(fileId))
     return status, jobDocumentSrc
+
 
 def job_doc_section_parser(config, defaultConfig):
     jobDocConfig = {
@@ -123,6 +122,7 @@ def job_doc_section_parser(config, defaultConfig):
     else:
         raise Exception('create_job_document failed')
 
+
 def presigned_url_section_parser(config):
     presignedUrlConfig = {}
     status = is_config_in_use(config, 'PRESIGNED_URL_CONFIG', 'DEFAULT')
@@ -130,6 +130,7 @@ def presigned_url_section_parser(config):
         presignedUrlConfig['roleArn'] = config['PRESIGNED_URL_CONFIG']['roleArn']
         presignedUrlConfig['expiresInSec'] = int(config['PRESIGNED_URL_CONFIG']['expiresInSec'])
     return status, presignedUrlConfig
+
 
 def job_exec_rollout_cfg_section_parser(config):
     JobExecutionsRolloutConfig = {}
@@ -147,8 +148,8 @@ def job_exec_rollout_cfg_section_parser(config):
                     'numberOfSucceededThings': int(config['INCREASE_CRITERIA']['numberOfSucceededThings'])
                 }
 
-
     return status, JobExecutionsRolloutConfig
+
 
 def abort_cfg_section_parser(config):
     abortConfig = {}
@@ -159,7 +160,7 @@ def abort_cfg_section_parser(config):
         for failureType in failureTypeList:
             failureTypeConfig = 'ABORT_CONFIG_TYPE_' + failureType
             if is_config_in_use(config, failureTypeConfig, 'ABORT_CONFIG'):
-                abortConfig['criteriaList'].append( {
+                abortConfig['criteriaList'].append({
                     'failureType': failureType,
                     'action': 'CANCEL',
                     'thresholdPercentage': float(config[failureTypeConfig]['thresholdPercentage']),
@@ -169,12 +170,14 @@ def abort_cfg_section_parser(config):
                     break
     return status, abortConfig
 
+
 def timeout_cfg_section_parser(config):
     timeoutConfig = {}
     status = is_config_in_use(config, 'TIMEOUT_CONFIG', 'DEFAULT')
     if status:
         timeoutConfig['inProgressTimeoutInMinutes'] = int(config['TIMEOUT_CONFIG']['inProgressTimeoutInMinutes'])
     return status, timeoutConfig
+
 
 def default_section_parser(config):
     defaultConfig = {
@@ -209,8 +212,8 @@ def default_section_parser(config):
     thingArnList, deviceCount, thingNameList = parse_thingList(thingListFilePath)
     if deviceCount < 1:
         raise Exception('thing list should not be empty')
-    status = s3_interface.upload_file_to_s3(binName, bucket, binFileKey)
-    if status == False:
+    status = s3Interface.upload_file_to_s3(binName, bucket, binFileKey)
+    if not status:
         raise Exception('job configure upload binFile failed')
     defaultConfig['thingArnList'] = thingArnList
     defaultConfig['thingNameList'] = thingNameList
@@ -219,7 +222,29 @@ def default_section_parser(config):
     defaultConfig['fileSize'] = file_stats.st_size
     return defaultConfig
 
+
+def alarm_configs_parser(config):
+    alarmConfigs = []
+    if config['ALARM_CONFIG'] and config['ALARM_CONFIG']['alarmList']:
+        for alarmName in config['ALARM_CONFIG']['alarmList'].split(','):
+            configKey = 'ALARM_CONFIG_' + alarmName
+            alarmConfig = config[configKey]
+            alarmConfig['alarmName'] = alarmName
+            alarmConfig['period'] = int(alarmConfig['period'])
+            alarmConfig['threshold'] = float(alarmConfig['threshold'])
+            alarmConfig['evaluationPeriods'] = int(alarmConfig['evaluationPeriods'])
+            alarmConfig['datapointsToAlarm'] = int(alarmConfig['datapointsToAlarm'])
+            alarmConfigs.append(alarmConfig)
+
+    return True, alarmConfigs
+
+
 def init_config(config):
+    if 'DEFAULT' not in config:
+        raise Exception('invalid config')
+    region = config['DEFAULT']['region']
+    s3Interface.init(region)
+
     deployConfig = {}
     defaultConfig = default_section_parser(config)
     jobDocumentSrc = job_doc_section_parser(config, defaultConfig)
@@ -246,9 +271,8 @@ def init_config(config):
         deployConfig['timeoutConfig'] = timeoutConfig
     else:
         deployConfig['timeoutConfig'] = None
+    status, alarmConfigs = alarm_configs_parser(config)
+    if status:
+        deployConfig['alarmConfigs'] = alarmConfigs
 
     return deployConfig
-
-
-if __name__ == '__main__':
-    main()

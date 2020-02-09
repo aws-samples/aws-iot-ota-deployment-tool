@@ -1,16 +1,10 @@
-import json
 import boto3
-import os
-import string
-import random
-import time
 import datetime
 import argparse
 import logging
 import sys
-import s3_interface
-from botocore.exceptions import ClientError
-from boto3.dynamodb.conditions import Key, Attr
+
+from aws_interfaces import s3_interface
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-r", "--Region", action="store", required=True, dest="region", help="the region for uploading")
@@ -29,10 +23,10 @@ def fetch_job():
     tableJobConfigs = dynamodb.query(
         TableName=tableName,
         Limit=1,
-        KeyConditionExpression="#S = :jobStatus", 
+        KeyConditionExpression="#S = :jobStatus",
         ExpressionAttributeNames={
             "#S": "jobStatus"
-        }, 
+        },
         ExpressionAttributeValues={
             ":jobStatus": {"S": "PendingDeployment"}
         })

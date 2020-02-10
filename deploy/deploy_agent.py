@@ -177,7 +177,7 @@ if args.action == 'deploy':
     if not number:
         msg = 'Need to specify number of device to deploy'
         logging.error(msg)
-        rasie Exception(msg)
+        raise Exception(msg)
     elif number > client_limit:
         msg = 'Exceed limit %s. Expect deploy %d devices.' % (number, client_limit)
         logging.error(msg)

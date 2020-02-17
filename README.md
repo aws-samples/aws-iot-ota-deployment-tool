@@ -1,6 +1,6 @@
 # AWS IoT OTA deployment tool user manual
 
-This document describes tools that can be used for deploying over-the-air (OTA) firmware updates on AWS IoT. The tools can be used for testing OTA firmware updates as well. 
+This document describes tools that can be used for deploying over-the-air (OTA) firmware updates on AWS IoT. The tools can be used for testing OTA firmware updates as well.
 
 # Contents
 
@@ -23,9 +23,9 @@ In the first section we will go through how to setup stress test by using the sh
 
 ## Usage:
 
-### List down the devices that will be update through OTA 
+### List down the devices that will be update through OTA
 
-There are many ways to filter out the target devices of interest. 
+There are many ways to filter out the target devices of interest.
 
 1. you can create a group of your devices by [AWS IoT Device Management](https://docs.aws.amazon.com/iot/latest/developerguide/thing-groups.html) and use [AWS CLI to describe the ARN of the group](https://docs.aws.amazon.com/cli/latest/reference/iot/describe-thing-group.html), then copy the ARN to thingList.txt
 2. you can also [list down the devices one by one with AWS CLI](https://docs.aws.amazon.com/cli/latest/reference/iot/describe-thing.html) and copy the ARN to thingList.txt
@@ -34,7 +34,7 @@ There are many ways to filter out the target devices of interest.
 After listed down the devices, your thingList.txt file should look like this :
 
 ![](./docs/thinglist.png)
-## Running main.sh 
+## Running main.sh
 
 sh main.sh <ThingListFile> <BinFile> <RoleARN > <JobID> <Rounds> <StreamID>
 
@@ -44,16 +44,16 @@ main.sh creates the job,stream documents, upload the bin file to S3, parse the t
 
 * ThingListFile:
     *  for example Thinglist.txt like the above example(do not include spaces in the path)
-* BinFile:  
+* BinFile:
     * the binary that you wish to update, it will be uploaded to S3 by the script durring the test(do not include spaces in the path)
-* RoleARN: 
+* RoleARN:
     * the ota role you’ve created, it should look like “**arn:aws:iam::123456789:role/your_ota_role**“ and given [OTA update service role](https://docs.aws.amazon.com/freertos/latest/userguide/create-service-role.html) access
 * JobID:
-    * input the job id you would like to use in the test, and you can track the status on IoT Console, the job will be deleted after the test is completed. 
+    * input the job id you would like to use in the test, and you can track the status on IoT Console, the job will be deleted after the test is completed.
 * Rounds:
     * when you use this tool for deploying an OTA firmware update, set this value to 1. Use a value larger than 1 for repeated testing purpose. This tool will deploy the same OTA job repeatedly for $Rounds times; if failure happens, the deployment will stop and the rest of the $Rounds will be skipped.
 * StreamID:
-    * input the stream id you would like to use in the test. The stream will be deleted after the test is completed. 
+    * input the stream id you would like to use in the test. The stream will be deleted after the test is completed.
 * PrivateKey (optional):
     * the private key in base64 format, it is optional. We will keep md5 in JSON file as default, if user didn't provide this item, otherwise use signature instead of md5.
 
@@ -170,22 +170,22 @@ sh OtaStressStart.sh <ThingListFile> <JobID> <Rounds> <job.json> <create-stream.
 
 **Description**:
 
-OtaStressStart.sh parse the thingLists.txt and then starts the a deployment or repeated stress test. If you want to use your own job/stream documents, you can run OtaStressStart.sh without OtaEnvBuild.sh, and deploy jobs with your customized job/stream documents 
+OtaStressStart.sh parse the thingLists.txt and then starts the a deployment or repeated stress test. If you want to use your own job/stream documents, you can run OtaStressStart.sh without OtaEnvBuild.sh, and deploy jobs with your customized job/stream documents
 
 * ThingListFile:
     *  for example Thinglist.txt like the above example(do not include spaces in the path)
 * JobID:
-    * input the job id you would like to use in the test, and you can track the status on IoT Console, the job will be deleted after the test is completed. 
-    * The scripts will automatically create the job document and create the job, but you cab also follow [this documentation](https://docs.aws.amazon.com/cli/latest/reference/iot/create-job.html) to customize the job document information. 
+    * input the job id you would like to use in the test, and you can track the status on IoT Console, the job will be deleted after the test is completed.
+    * The scripts will automatically create the job document and create the job, but you cab also follow [this documentation](https://docs.aws.amazon.com/cli/latest/reference/iot/create-job.html) to customize the job document information.
 * Rounds:
     * when you use this tool for deploying an OTA firmware update, set this value to 1. Use a value larger than 1 for repeated testing purpose. This tool will deploy the same OTA job repeatedly for $Rounds times; if failure happens, the deployment will stop and the rest of the $Rounds will be skipped.
 * StreamID:
-    * input the stream id you would like to use in the test. The stream will be deleted after the test is completed. 
-    * The scripts will automatically create the stream document and create the stream, but you cab also follow [this documentation](https://docs.aws.amazon.com/cli/latest/reference/iot/create-stream.html) to customize the stream document information. 
+    * input the stream id you would like to use in the test. The stream will be deleted after the test is completed.
+    * The scripts will automatically create the stream document and create the stream, but you cab also follow [this documentation](https://docs.aws.amazon.com/cli/latest/reference/iot/create-stream.html) to customize the stream document information.
 * job.json
-    * The job document you’ve customized in the above section. if you run main.sh, the document is created automatically 
+    * The job document you’ve customized in the above section. if you run main.sh, the document is created automatically
 * create-stream.json
-    * The stream document you’ve customized in the above section. if you run main.sh, the document is created automatically 
+    * The stream document you’ve customized in the above section. if you run main.sh, the document is created automatically
 
 ```
 sh OtaStressStart.sh ThingList.txt MyJobID123 2 file://example-job.json  file://create-stream.json MyStreamID123
@@ -200,7 +200,7 @@ sh OtaStressStart.sh ThingList.txt MyJobID123 2 file://example-job.json  file://
 In the first section we will go through how to setup a deployment or repeated stress test by using the shell scripts. Here we want to highlight some benefits using python scripts.
 For example, you can customize more parameters:
 
-1. The debug method to stdout or log file 
+1. The debug method to stdout or log file
 2. whether to clean up the results after testing
 3. the region and bucket you would like to use for testing
 4. the delay for each AWS IoT operations (creating jobs, deleting jobs)
@@ -210,13 +210,13 @@ We’ve also created a client monitor to polling the status and statistics for u
 ## Prerequisites:
 
 1. you need to have AWS account
-2. Install [python3](https://realpython.com/installing-python/) 
+2. Install [python3](https://realpython.com/installing-python/)
 3. Create IAM user maker sure it has [OTA required user policy](https://docs.aws.amazon.com/freertos/latest/userguide/create-ota-user-policy.html)
 4. [Create an OTA update service role](https://docs.aws.amazon.com/freertos/latest/userguide/create-service-role.html)
 
-### List down the devices that will be update through OTA 
+### List down the devices that will be update through OTA
 
-There are many ways to filter out the target devices of interest. 
+There are many ways to filter out the target devices of interest.
 
 1. you can create a group of your devices by [AWS IoT Device Management](https://docs.aws.amazon.com/iot/latest/developerguide/thing-groups.html) and use [AWS CLI to describe the ARN of the group](https://docs.aws.amazon.com/cli/latest/reference/iot/describe-thing-group.html), then copy the ARN to thingList.txt
 2. you can also [list down the devices one by one with AWS CLI](https://docs.aws.amazon.com/cli/latest/reference/iot/describe-thing.html) and copy the ARN to thingList.txt
@@ -311,6 +311,31 @@ minNumberOfExecutedThings = 1
 [TIMEOUT_CONFIG]
 inProgressTimeoutInMinutes = 60
 
+[ALARM_CONFIG]
+alarmList=DownloadTimeUpperLimitAlarm,DownloadTimeLowerLimitAlarm
+
+[ALARM_CONFIG_DownloadTimeUpperLimitAlarm]
+namespace=IoT:OTA:JobExecution
+metricName=downloadTime
+stat=p99
+period=60
+threshold=3600
+alarmType=upper
+evaluationPeriods=5
+datapointsToAlarm=3
+snsTopics=arn:aws:sns:<region>:<aws-account-id>:email-notification,arn:aws:sns:<region>:<aws-account-id>:sms-notification
+
+[ALARM_CONFIG_DownloadTimeLowerLimitAlarm]
+namespace=IoT:OTA:JobExecution
+metricName=downloadTime
+stat=p99
+period=60
+threshold=100
+alarmType=lower
+evaluationPeriods=5
+datapointsToAlarm=3
+snsTopics=arn:aws:sns:<region>:<aws-account-id>:ota-force-stopper
+
 ```
 [DEFAULT]
 
@@ -318,16 +343,16 @@ description: [DEFAULT] section is required and the job will be deployed with the
 
 * thingList:
     *  for example Thinglist.txt like the above example(do not include spaces in the path)
-* binName:  
+* binName:
     * the binary that you wish to update, it will be uploaded to S3 by the script durring the test(do not include spaces in the path)
-* roleArn: 
+* roleArn:
     * the ota role you’ve created, it should look like “**arn:aws:iam::123456789:role/your_ota_role**“ and given [OTA update service role](https://docs.aws.amazon.com/freertos/latest/userguide/create-service-role.html) access
 * jobId:
-    * input the job id you would like to use in the test, and you can track the status on IoT Console, the job will be deleted after the test is completed. See [this documentation](https://github.com/awsblake/aws-iot-device-sdk-embedded-C/blob/dla_review/README.md) for how to create such a job.  See this section of this doc if you want to use a script to create the job for you. 
+    * input the job id you would like to use in the test, and you can track the status on IoT Console, the job will be deleted after the test is completed. See [this documentation](https://github.com/awsblake/aws-iot-device-sdk-embedded-C/blob/dla_review/README.md) for how to create such a job.  See this section of this doc if you want to use a script to create the job for you.
 * rounds:
     * when you use this tool for deploying an OTA firmware update, set this value to 1. Use a value larger than 1 for repeated testing purpose. This tool will deploy the same OTA job repeatedly for $rounds times; if failure happens, the deployment will stop and the rest of the $rounds will be skipped.
 * streamId:
-    * input the stream id you would like to use in the test. The stream will be deleted after the test is completed. The python scripts will automatically create the stream document and create the stream, but you cab also follow [this documentation](https://docs.aws.amazon.com/cli/latest/reference/iot/create-stream.html) to customize the stream information. 
+    * input the stream id you would like to use in the test. The stream will be deleted after the test is completed. The python scripts will automatically create the stream document and create the stream, but you cab also follow [this documentation](https://docs.aws.amazon.com/cli/latest/reference/iot/create-stream.html) to customize the stream information.
 * bucket:
     * the bucket which is used for OTA Jobs, it will be use to upload bin file and json documents
 * cleanUpCfg:
@@ -479,12 +504,14 @@ Specifies the amount of time each device has to finish its execution of the job.
 * inProgressTimeoutInMinutes:
     * Specifies the amount of time, in minutes, this device has to finish execution of this job. The timeout interval can be anywhere between 1 minute and 7 days (1 to 10080 minutes). The in progress timer can't be updated and will apply to all job executions for the job. Whenever a job execution remains in the IN_PROGRESS status for longer than this interval, the job execution will fail and switch to the terminal TIMED_OUT status.
 
-[ALARM_CONFIG]
+[ALARM_CONFIG] (Optional)
+
+__Note that new custom metrics (new namespace, new metric name) can take up to 15 minutes before they would appear and accesible in CloudWatch, which might affect alarm response time. Please do a test run before using this feature in production!__
 
 * alarmList:
-    * Specifies a comma-separated list of alarm names to be added during the deployment. These alarms would be deleted during the clean-up phase of the deployment.
+    * Specifies a comma-separated list of alarm names to be added during the deployment. These alarms would be deleted during the clean-up phase of the deployment. To disable this feature, leave it as an empty list or comment the ALARM_CONFIG section.
 
-[ALARM_CONFIG_<alarm_name>]
+[ALARM_CONFIG_<alarm_name>] (Optional)
 
 This config section specifies the details of an alarm listed in the `alarmList` in the `ALARM_CONFIG` section. `<alarm_name>` must match the name of the alarm appeared in `alarmList`. For example:
 
@@ -505,7 +532,7 @@ alarmList=MyAlarm1,MyAlarm2
     * statistic of the metric. Supported values are `SampleCount|Average|Sum|Minimum|Maximum`, or any value between `p0.0` and `p100`.
 * period:
     * time-period of the metric in seconds, must be a multiple of 60.
-* alarmType: 
+* alarmType:
     * specifies how the threshold is treated in this alarm. It can be one of these values:
         * `upper`: the threshold value is treated as an upper limit. Datapoints above this value is treated as violating the threshold.
         * `lower`: the threshold value is treated as a lower limit. Datapoints below this value is treated as violating the threshold.
@@ -515,9 +542,10 @@ alarmList=MyAlarm1,MyAlarm2
 * datapointsToAlarm:
     * The number of data points that must be breaching to trigger the alarm. This is used only if you are setting an "M out of N" alarm. In that case, this value is the M. For more information, see [Evaluating an Alarm](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/AlarmThatSendsEmail.html#alarm-evaluation) in the Amazon CloudWatch User Guide .
 * threshold: threshold value of the alarm.
-* snsTopics: topics to be notified when the alarm is in ALARM state.
+* snsTopics:
+    * Topics to be notified when the alarm is in ALARM state. The Cloudformation Template `templates/monitor-tool-template` will create 3 separate SNS topics `email-notification`, `sms-notification` and `ota-force-stopper`. One may visit the [Amazon SNS Console](https://console.aws.amazon.com/sns/home) to retrieve their ARNs there.
 
-### 
+###
 
 ### **Start deploy jobs for test:**
 
@@ -535,7 +563,7 @@ monitor.py monitors the status of the jobs and also checks mqtt messages status 
 
 ### Usage:
 
-monitor.py takes the same **dev.ini** file as parameters 
+monitor.py takes the same **dev.ini** file as parameters
 
 
 ```
@@ -661,18 +689,18 @@ here is the schema used in the exampl, you can find it in the ***deployment/db_t
                 {
                     "AttributeName": "jobStatus",
                     "AttributeType": "S"
-                }, 
+                },
                 {
                     "AttributeName": "timestamp",
                     "AttributeType": "S"
                 }
-            ], 
+            ],
             "ProvisionedThroughput": {
                 "NumberOfDecreasesToday": 0,
                 "WriteCapacityUnits": 5,
                 "ReadCapacityUnits": 5
             },
-            "TableSizeBytes": 346, 
+            "TableSizeBytes": 346,
             "TableName": "job_config_table",
             "TableStatus": "ACTIVE",
             "TableId": "26ae4112-2be3-47d4-8f2b-d633c7400bdb",
@@ -734,20 +762,20 @@ herer is the parameters for ***add_job_schedule.py***
     * submit: if method is set to submit, it means that users have a ***dev.ini*** File((example: dev_20200101.ini) ) that is ready to use for job deployments and can be scheduled. Please noted when using submit value, devIni and the thingList can not be None
     * create: if method is set to create, it means that users will create a new dev*.ini file with the template or last dev.ini file and walk through the configure wizard
 
-* binFile(required):  
+* binFile(required):
     * the binary that you wish to update, it will be uploaded to S3 and will be dployed by the python tools
 
-* tableName(required):  
+* tableName(required):
     * the DynamoDB table you've created in ***DynamoDB setup*** section, Make sure that the table exists in the  ***--region*** input parameters
 
-* bucket(required):  
+* bucket(required):
     * the bucket you will use to upload the bin file, dev*.ini file ((example: dev_20200101.ini) ) and the thinglistFile. Make sure that the bucket exists in the  ***--region*** input parameters
 
-* region(required):  
+* region(required):
     * the region you will use for DynamoDB table, and s3 bucket to upload the job configs, noted that you can use different region in the dev*.ini file , the --region used in add_job_schedule.py is where you queue the jobs, but you can use the dev*.ini file to deploy different jobs into the region defined in dev*.ini
 
-* devIni(optional):  
+* devIni(optional):
     * the dev*.ini file(example: dev_20200101.ini) you will assign for the job
 
-* thingList(optional):  
+* thingList(optional):
     * the thingList file(example: thingList.txt) you will assign for the job

@@ -15,7 +15,7 @@ class ota_deployment_tool():
         deployConfig = jobs_configure.init_config(config)
         self.deployConfig = deployConfig
 
-        self.alarm_interface = AlarmInterface(deployConfig['region'])
+        self.alarm_interface = AlarmInterface(deployConfig['defaultConfig']['region'])
         self.clean_up(deployConfig)
 
     def clean_up(self, deployConfig):

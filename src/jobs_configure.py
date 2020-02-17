@@ -228,12 +228,20 @@ def alarm_configs_parser(config):
     if config['ALARM_CONFIG'] and config['ALARM_CONFIG']['alarmList']:
         for alarmName in config['ALARM_CONFIG']['alarmList'].split(','):
             configKey = 'ALARM_CONFIG_' + alarmName
-            alarmConfig = config[configKey]
-            alarmConfig['alarmName'] = alarmName
-            alarmConfig['period'] = int(alarmConfig['period'])
-            alarmConfig['threshold'] = float(alarmConfig['threshold'])
-            alarmConfig['evaluationPeriods'] = int(alarmConfig['evaluationPeriods'])
-            alarmConfig['datapointsToAlarm'] = int(alarmConfig['datapointsToAlarm'])
+            alarmConfigFromFile = config[configKey]
+            alarmConfig = {
+                'alarmName': alarmName,
+                'jobId': config['DEFAULT']['jobId'],
+                'namespace': alarmConfigFromFile['namespace'],
+                'metricName': alarmConfigFromFile['metricName'],
+                'stat': alarmConfigFromFile['stat'],
+                'period': int(alarmConfigFromFile['period']),
+                'threshold': float(alarmConfigFromFile['threshold']),
+                'alarmType': alarmConfigFromFile['alarmType'],
+                'evaluationPeriods': int(alarmConfigFromFile['evaluationPeriods']),
+                'datapointsToAlarm': int(alarmConfigFromFile['datapointsToAlarm']),
+                'alarmActions': alarmConfigFromFile['snsTopics'].split(',')
+            }
             alarmConfigs.append(alarmConfig)
 
     return True, alarmConfigs

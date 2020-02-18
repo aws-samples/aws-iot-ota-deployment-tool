@@ -7,10 +7,10 @@ import argparse
 import logging
 import sys
 import configparser
-import s3_interface
 import json
 import datetime
 from botocore.exceptions import ClientError
+from aws_interfaces.s3_interface import S3Interface
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-m", "--method", action="store", required=True, dest="method", help="submit or create")
@@ -33,12 +33,13 @@ bucket = args.bucket
 thingListFile = args.thingListFile
 devIniFile = args.devIniFile
 dynamodb = boto3.client('dynamodb', region_name=region)
-s3_interface.init(region)
+s3_interface = S3Interface(region)
 
 
 def create_new_job_config():
-    ### user can update a new job config throug hci
+    # user can update a new job config throug hci
     return True
+
 
 def is_submit_param_valid(binFileName, thingListFile, devIniFile):
     status = True
@@ -61,6 +62,7 @@ def is_submit_param_valid(binFileName, thingListFile, devIniFile):
         print('thingListFile not matched')
     return status
 
+
 def submit_job_config():
     if is_submit_param_valid(binFileName, thingListFile, devIniFile):
         timestamp = datetime.datetime.utcnow().strftime("%Y%m%d-%H%M%S")
@@ -68,7 +70,7 @@ def submit_job_config():
         jobId = 'jobId_' + timestamp
         streamId = 'streamId_' + timestamp
         binName = 'binFile_' + jobId + '_' + binFileName
-        binFileKey = 'release/' +  binName
+        binFileKey = 'release/' + binName
         devFileName = 'devFile_' + jobId + '_' + devIniFile
         devFileKey = 'release/' + devFileName
         thingListFileName = 'thingListFile_' + jobId + '_' + thingListFile
@@ -78,7 +80,7 @@ def submit_job_config():
         config['DEFAULT']['streamId'] = streamId
         config['DEFAULT']['binName'] = binName
         with open(devFileName, 'w') as configfile:
-            config.write(configfile)  
+            config.write(configfile)
 
         s3_interface.upload_file_to_s3(devFileName, bucket, devFileKey)
         s3_interface.upload_file_to_s3(binFileName, bucket, binFileKey)
@@ -98,12 +100,13 @@ def submit_job_config():
     else:
         raise Exception('submit config and param sanity check failed')
 
+
 def add_job_entry():
     if method == 'submit':
         submit_job_config()
     elif method == 'create':
         create_new_job_config()
     else:
-        raise Exception('unexpected input method, use submit or create' )
+        raise Exception('unexpected input method, use submit or create')
 
 add_job_entry()

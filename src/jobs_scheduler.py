@@ -4,7 +4,7 @@ import logging
 import sys
 import configparser
 
-from aws_interfaces import iot_interface
+from aws_interfaces.iot_interface import IotInterface
 from aws_interfaces.alarm_interface import AlarmInterface
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
@@ -14,8 +14,8 @@ class ota_deployment_tool():
     def __init__(self, config):
         deployConfig = jobs_configure.init_config(config)
         self.deployConfig = deployConfig
-
         self.alarm_interface = AlarmInterface(deployConfig['defaultConfig']['region'])
+        self.iot_interface = IotInterface(deployConfig['defaultConfig']['region'])
         self.clean_up(deployConfig)
 
     def clean_up(self, deployConfig):
@@ -24,11 +24,12 @@ class ota_deployment_tool():
         jobId = deployConfig['defaultConfig']['jobId']
         if cleanUpCfg:
             logging.info('deleting old job')
-            iot_interface.delete_job(jobId)
+            self.iot_interface.delete_job(jobId)
             logging.info('deleting old stream')
-            iot_interface.delete_stream(streamId)
+            self.iot_interface.delete_stream(streamId)
             logging.info('deleting old alarms')
-            self.alarm_interface.delete_alarms(deployConfig['alarmConfigs'])
+            if 'alarmConfigs' in deployConfig:
+                self.alarm_interface.delete_alarms(deployConfig['alarmConfigs'])
         else:
             logging.info('skipping clean_up due to cleanUpCfg set to false')
 
@@ -46,22 +47,23 @@ class ota_deployment_tool():
         defaultDelay = deployConfig['defaultConfig']['defaultDelay']
         rounds = deployConfig['defaultConfig']['rounds']
 
-        status, err = self.alarm_interface.create_alarms(deployConfig['alarmConfigs'])
-        if not status:
-            logging.error(err)
-            return
+        if 'alarmConfigs' in deployConfig:
+            status, err = self.alarm_interface.create_alarms(deployConfig['alarmConfigs'])
+            if not status:
+                logging.error(err)
+                return
 
-        status, err = iot_interface.create_stream(streamId, fileId, bucket, binFileKey, roleArn)
+        status, err = self.iot_interface.create_stream(streamId, fileId, bucket, binFileKey, roleArn)
         if not status:
             logging.error(err)
             return
-        status, err = iot_interface.create_job(deployConfig)
+        status, err = self.iot_interface.create_job(deployConfig)
         if not status:
             logging.error(err)
             return
         job_complete_counter = 0
         while job_complete_counter < rounds:
-            job_dsb, err = iot_interface.get_job_info(jobId)
+            job_dsb, err = self.iot_interface.get_job_info(jobId)
             status = job_dsb.get('status')
             if err:
                 logging.error(err)
@@ -77,12 +79,12 @@ class ota_deployment_tool():
                     self.clean_up(deployConfig)
                     if job_complete_counter < rounds:
                         logging.info('creating new stream')
-                        status, err = iot_interface.create_stream(streamId, fileId, bucket, binFileKey, roleArn)
+                        status, err = self.iot_interface.create_stream(streamId, fileId, bucket, binFileKey, roleArn)
                         if not status:
                             logging.error(err)
                             return
                         logging.info('creating new job, thingArnList: %s', thingArnList)
-                        status, err = iot_interface.create_job(jobId, thingArnList, jobDocumentSrc)
+                        status, err = self.iot_interface.create_job(jobId, thingArnList, jobDocumentSrc)
                         if not status:
                             logging.error(err)
                             return

@@ -10,7 +10,20 @@ import re
 import sys
 import time
 import uuid
+from multiprocessing import Process
 from shutil import copyfile
+from daemon import Daemon
+
+
+class DeviceDaemon(Daemon):
+    def run (self):
+        os.chdir(os.path.dirname(self.exefile))
+        os.system('./%s' % os.path.basename(self.exefile))
+
+
+def run_client(exefile_path):
+    daemon = DeviceDaemon('/tmp/%s.pid' % os.path.basename(exefile_path), exefile_path)
+    daemon.start()
 
 
 def init_config(path):
@@ -18,6 +31,7 @@ def init_config(path):
         config = configparser.ConfigParser()
         config.read(path)
     return config
+
 
 
 def init_iot_client(credential):
@@ -107,8 +121,11 @@ def build_and_run_client(iotClient, iotConfig):
     os.rename(sample_name, client_id)
 
     # run
-    os.system('./%s &' % client_id)
     os.chdir(work_dir)
+    exefile_path = os.path.join(work_dir, sample_dir, client_id)
+    p = Process(target=run_client, args=(exefile_path,))
+    p.start()
+    p.join()
 
     return client_id
 
@@ -155,12 +172,18 @@ def clean(iotClient, iotConfig, all=True, number=0):
         iotClient.delete_thing(thingName=thing_name)
 
         client_id = thing_name.split('_', 1)[-1]
-        os.remove('%s/%s.pem.crt' % (iotConfig['thingCertDir'], client_id))
-        os.remove('%s/%s.pem.key' % (iotConfig['thingCertDir'], client_id))
-        os.remove('%s/%s' % (sample_dir, client_id))
+        try:
+            os.remove('%s/%s.pem.crt' % (iotConfig['thingCertDir'], client_id))
+            os.remove('%s/%s.pem.key' % (iotConfig['thingCertDir'], client_id))
+            os.remove('%s/%s' % (sample_dir, client_id))
+        except OSError as e:
+            logging.warn('Failed to remove device credentials %s', str(e))
         for proc in psutil.process_iter():
             if proc.name() == client_id:
                 proc.kill()
+        pidfile = '/tmp/%s.pid' % client_id
+        if os.path.exists(pidfile):
+            os.remove(pidfile)
 
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)

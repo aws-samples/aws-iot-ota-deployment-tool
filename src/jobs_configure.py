@@ -7,13 +7,10 @@ import sys
 
 from random import seed
 from random import randint
-from aws_interfaces import s3_interface
+from aws_interfaces.s3_interface import S3Interface
 
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
-# Initializing parameters:
-s3Interface = s3_interface
-
 configMap = {
     'PRESIGNED_URL_CONFIG': 'usePresignedUrlConfig',
     'CUSTOM_JOB_DOCUMENT': 'useCustomJobDocument',
@@ -100,9 +97,9 @@ def create_job_document(jobDocConfig):
     with open('job.json', 'w') as outfile:
         json.dump(data, outfile)
         key = 'job' + str(fileId) + '.json'
-    status = s3Interface.upload_file_to_s3('job.json', bucket, key)
+    s3_interface.upload_file_to_s3('job.json', bucket, key)
     jobDocumentSrc = 'https://{}.s3.amazonaws.com/job{}.json'.format(bucket, str(fileId))
-    return status, jobDocumentSrc
+    return jobDocumentSrc
 
 
 def job_doc_section_parser(config, defaultConfig):
@@ -116,11 +113,8 @@ def job_doc_section_parser(config, defaultConfig):
     status = is_config_in_use(config, 'CUSTOM_JOB_DOCUMENT', 'DEFAULT')
     if status:
         jobDocConfig['jobDocPath'] = config['CUSTOM_JOB_DOCUMENT']['jobDocPath']
-    status, jobDocumentSrc = create_job_document(jobDocConfig)
-    if status:
-        return jobDocumentSrc
-    else:
-        raise Exception('create_job_document failed')
+    jobDocumentSrc = create_job_document(jobDocConfig)
+    return jobDocumentSrc
 
 
 def presigned_url_section_parser(config):
@@ -212,9 +206,7 @@ def default_section_parser(config):
     thingArnList, deviceCount, thingNameList = parse_thingList(thingListFilePath)
     if deviceCount < 1:
         raise Exception('thing list should not be empty')
-    status = s3Interface.upload_file_to_s3(binName, bucket, binFileKey)
-    if not status:
-        raise Exception('job configure upload binFile failed')
+    s3_interface.upload_file_to_s3(binName, bucket, binFileKey)
     defaultConfig['thingArnList'] = thingArnList
     defaultConfig['thingNameList'] = thingNameList
     defaultConfig['deviceCount'] = deviceCount
@@ -224,8 +216,10 @@ def default_section_parser(config):
 
 
 def alarm_configs_parser(config):
+    status = False
     alarmConfigs = []
-    if config['ALARM_CONFIG'] and config['ALARM_CONFIG']['alarmList']:
+    if 'ALARM_CONFIG' in config and 'alarmList' in config['ALARM_CONFIG']:
+        status = True
         for alarmName in config['ALARM_CONFIG']['alarmList'].split(','):
             configKey = 'ALARM_CONFIG_' + alarmName
             alarmConfigFromFile = config[configKey]
@@ -244,43 +238,42 @@ def alarm_configs_parser(config):
             }
             alarmConfigs.append(alarmConfig)
 
-    return True, alarmConfigs
+    return status, alarmConfigs
 
 
 def init_config(config):
+    global s3_interface
     if 'DEFAULT' not in config:
         raise Exception('invalid config')
     region = config['DEFAULT']['region']
-    s3Interface.init(region)
+    s3_interface = S3Interface(region)
 
     deployConfig = {}
     defaultConfig = default_section_parser(config)
     jobDocumentSrc = job_doc_section_parser(config, defaultConfig)
     defaultConfig['jobDocumentSrc'] = jobDocumentSrc
     deployConfig['defaultConfig'] = defaultConfig
+
     status, presignedUrlConfig = presigned_url_section_parser(config)
     if status:
         deployConfig['presignedUrlConfig'] = presignedUrlConfig
-    else:
-        deployConfig['presignedUrlConfig'] = None
 
     status, jobExecutionsRolloutConfig = job_exec_rollout_cfg_section_parser(config)
     if status:
         deployConfig['jobExecutionsRolloutConfig'] = jobExecutionsRolloutConfig
-    else:
-        deployConfig['jobExecutionsRolloutConfig'] = None
+
     status, abortConfig = abort_cfg_section_parser(config)
     if status:
         deployConfig['abortConfig'] = abortConfig
-    else:
-        deployConfig['abortConfig'] = None
+
     status, timeoutConfig = timeout_cfg_section_parser(config)
     if status:
         deployConfig['timeoutConfig'] = timeoutConfig
-    else:
-        deployConfig['timeoutConfig'] = None
+
     status, alarmConfigs = alarm_configs_parser(config)
     if status:
         deployConfig['alarmConfigs'] = alarmConfigs
+    else:
+        print('no alarm is added')
 
     return deployConfig

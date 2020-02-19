@@ -370,7 +370,7 @@ description: [DEFAULT] section is required and the job will be deployed with the
 * targetSelection:
     * Specifies whether the job will continue to run (CONTINUOUS), or will be complete after all those things specified as targets have completed the job (SNAPSHOT). If continuous, the job may also be run on a thing when a change is detected in a target. For example, a job will run on a thing when the thing is added to a target group, even after the job was completed by all things originally in the group.
 * useCustomJobDocument (option):
-    * users can use a comtomized job document with more details while deploying, if useCustomJobDocument set True, means [CUSTOM_JOB_DOCUMENT] section should be included in the config, if set false or useCustomJobDocument is not appeared in dev.ini [CUSTOM_JOB_DOCUMENT] section will be ignored
+    * users can use a comtomized job document with more details while deploying, if useCustomJobDocument set True, means [CUSTOM_JOB_DOCUMENT] section should be included in the config, if set false or useCustomJobDocument is not appeared in dev.ini [CUSTOM_JOB_DOCUMENT] section will be ignored, please noted the job document file will be uploaded to the s3 bucket you've put in dev.ini file
 * usePresignedUrlConfig:
     * if usePresignedUrlConfig set True, means [PRESIGNED_URL_CONFIG] section should be included in the config, if set false or usePresignedUrlConfig is not appeared in dev.ini [PRESIGNED_URL_CONFIG] section will be ignored
 * useJobExecutionsRolloutConfig (option):

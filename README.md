@@ -350,13 +350,13 @@ description: [DEFAULT] section is required and the job will be deployed with the
 * jobId:
     * input the job id you would like to use in the test, and you can track the status on IoT Console, the job will be deleted after the test is completed. See [this documentation](https://github.com/awsblake/aws-iot-device-sdk-embedded-C/blob/dla_review/README.md) for how to create such a job.  See this section of this doc if you want to use a script to create the job for you.
 * rounds:
-    * when you use this tool for deploying an OTA firmware update, set this value to 1. Use a value larger than 1 for repeated testing purpose. This tool will deploy the same OTA job repeatedly for $rounds times; if failure happens, the deployment will stop and the rest of the $rounds will be skipped.
+    * when you use this tool for deploying an OTA firmware update, set this value to 1. Use a value larger than 1 for repeated testing purpose. This tool will deploy the same OTA job repeatedly for $rounds times; if failure happens, the deployment will stop and the rest of the $rounds will be skipped. **Please noted that if rounds > 1, cleanUpCfg needs to be set ot True**
 * streamId:
     * input the stream id you would like to use in the test. The stream will be deleted after the test is completed. The python scripts will automatically create the stream document and create the stream, but you cab also follow [this documentation](https://docs.aws.amazon.com/cli/latest/reference/iot/create-stream.html) to customize the stream information.
 * bucket:
     * the bucket which is used for OTA Jobs, it will be use to upload bin file and json documents
 * cleanUpCfg:
-    * to decide if the jobs will be clean up after the test is done
+    * to decide if the jobs will be clean up after the test is done. **Please noted that if rounds > 1, cleanUpCfg needs to be set ot True**
 * debug:
     * to decide if the log output will be write to a file or output to stdout
 * defaultDelay:

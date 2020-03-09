@@ -222,7 +222,7 @@ class ALarmInterfaceTests(unittest.TestCase):
         assert (True, None) == self.alarm_interface.delete_alarms(alarmConfigs)
 
         # Expect these behaviors
-        self.alarm_interface.client.delete_alarms.assert_called_with(expectedRequest)
+        self.alarm_interface.client.delete_alarms.assert_called_with(AlarmNames=expectedRequest)
 
     def test_delete_alarms_client_raises_error(self):
         # Given these inputs and expected outputs
@@ -248,4 +248,4 @@ class ALarmInterfaceTests(unittest.TestCase):
 
         # Expect these behaviors
         assert not status
-        self.alarm_interface.client.delete_alarms.assert_called_with(expectedRequest)
+        self.alarm_interface.client.delete_alarms.assert_called_with(AlarmNames=expectedRequest)

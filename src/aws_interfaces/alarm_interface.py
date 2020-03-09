@@ -117,7 +117,7 @@ class AlarmInterface:
         logging.info('Deleting alarms: %s', str(alarmNames))
 
         try:
-            self.client.delete_alarms(alarmNames)
+            self.client.delete_alarms(AlarmNames=alarmNames)
         except ClientError as e:
             return False, str(e)
         return True, None

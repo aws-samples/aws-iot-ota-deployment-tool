@@ -1,0 +1,383 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Metadata": {
+        "AWS::CloudFormation::Designer": {
+            "cd1e8bb9-ea9d-40af-af82-3d92d451f062": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 200,
+                    "y": 120
+                },
+                "z": 0,
+                "embeds": []
+            },
+            "369a9386-52f6-44ab-b33f-c8dd4c9703bf": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 350,
+                    "y": 220
+                },
+                "z": 0,
+                "embeds": []
+            },
+            "4b648b4e-cf0d-415d-9b33-b1396b5052e1": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 440,
+                    "y": 90
+                },
+                "z": 0,
+                "embeds": []
+            },
+            "523d4e76-4dfd-4b7c-9f6c-e4ba488e2e4b": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 630,
+                    "y": 190
+                },
+                "z": 0,
+                "embeds": []
+            },
+            "0e1f2958-64ba-435d-b80c-4d568c3b65ed": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 750,
+                    "y": 90
+                },
+                "z": 0,
+                "embeds": []
+            },
+            "2d5ca0bf-52b3-482e-b05b-a2f4b84181f6": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 610,
+                    "y": 90
+                },
+                "z": 0,
+                "embeds": []
+            },
+            "6d98f916-3c67-4ad7-a5d6-0ac91d6d7ebd": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 750,
+                    "y": 190
+                },
+                "z": 0,
+                "embeds": [],
+                "dependson": [
+                    "2d5ca0bf-52b3-482e-b05b-a2f4b84181f6"
+                ]
+            },
+            "2bbcb016-cb07-4b04-9706-5b58372b330f": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 560,
+                    "y": 280
+                },
+                "z": 0,
+                "embeds": []
+            },
+            "f2ed8393-78e2-414a-a647-905f48f7baa7": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 680,
+                    "y": 280
+                },
+                "z": 0,
+                "embeds": []
+            }
+        }
+    },
+    "Parameters": {
+        "AlarmEmailEndpoint": {
+            "Description": "The email to notify when alarm goes off.",
+            "Type": "String",
+            "MaxLength": 50
+        }
+    },
+    "Resources": {
+        "JobExecutionEventRule": {
+            "Type": "AWS::IoT::TopicRule",
+            "Properties": {
+                "TopicRulePayload": {
+                    "Actions": [
+                        {
+                            "Lambda": {
+                                "FunctionArn": {
+                                    "Fn::GetAtt": [
+                                        "MetricGeneratorLambda",
+                                        "Arn"
+                                    ]
+                                }
+                            }
+                        }
+                    ],
+                    "Description": "IoT Rule for terminal job execution events.",
+                    "RuleDisabled": false,
+                    "Sql": "SELECT * FROM '$aws/events/jobExecution/#'"
+                }
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "cd1e8bb9-ea9d-40af-af82-3d92d451f062"
+                }
+            },
+            "DependsOn": [
+                "MetricGeneratorLambda"
+            ]
+        },
+        "MetricGeneratorLambda": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+                "Code": {
+                    "S3Bucket": "iotlab-release-ap-south-1",
+                    "S3Key": "ota-monitor/IoTJobExecutionMetricsGenerator.zip"
+                },
+                "Handler": "metrics_generator.lambda_handler",
+                "Role": {
+                    "Fn::GetAtt": [
+                        "MetricGeneratorLambdaExecutionRole",
+                        "Arn"
+                    ]
+                },
+                "Runtime": "python3.8",
+                "Timeout": 5
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "369a9386-52f6-44ab-b33f-c8dd4c9703bf"
+                }
+            },
+            "DependsOn": [
+                "MetricGeneratorLambdaExecutionRole"
+            ]
+        },
+        "MetricGeneratorLambdaExecutionRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "AssumeRolePolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": [
+                                    "lambda.amazonaws.com"
+                                ]
+                            },
+                            "Action": [
+                                "sts:AssumeRole"
+                            ]
+                        }
+                    ]
+                },
+                "ManagedPolicyArns": [
+                    "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+                ],
+                "Policies": [
+                    {
+                        "PolicyDocument": {
+                            "Version": "2012-10-17",
+                            "Statement": [
+                                {
+                                    "Action": [
+                                        "cloudwatch:*"
+                                    ],
+                                    "Effect": "Allow",
+                                    "Resource": "*"
+                                }
+                            ]
+                        },
+                        "PolicyName": "InlinePolicy"
+                    }
+                ]
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "4b648b4e-cf0d-415d-9b33-b1396b5052e1"
+                }
+            }
+        },
+        "OtaForceStopTopic": {
+            "Type": "AWS::SNS::Topic",
+            "Properties": {
+                "DisplayName": "OtaForceStopTopic",
+                "TopicName": "ota-force-stopper",
+                "Subscription": [
+                    {
+                        "Endpoint": {
+                            "Fn::GetAtt": [
+                                "OtaForceStopperLambda",
+                                "Arn"
+                            ]
+                        },
+                        "Protocol": "lambda"
+                    }
+                ]
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "523d4e76-4dfd-4b7c-9f6c-e4ba488e2e4b"
+                }
+            },
+            "DependsOn": [
+                "OtaForceStopperLambda"
+            ]
+        },
+        "OtaForceStopperLambdaExecutionRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "AssumeRolePolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": [
+                                    "lambda.amazonaws.com"
+                                ]
+                            },
+                            "Action": [
+                                "sts:AssumeRole"
+                            ]
+                        }
+                    ]
+                },
+                "ManagedPolicyArns": [
+                    "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+                ],
+                "Policies": [
+                    {
+                        "PolicyDocument": {
+                            "Version": "2012-10-17",
+                            "Statement": [
+                                {
+                                    "Action": [
+                                        "iot:CancelJob",
+                                        "iot:DeleteJob"
+                                    ],
+                                    "Effect": "Allow",
+                                    "Resource": "*"
+                                },
+                                {
+                                    "Effect": "Allow",
+                                    "Action": [
+                                        "logs:CreateLogStream",
+                                        "logs:PutLogEvents"
+                                    ],
+                                    "Resource": [
+                                        "*"
+                                    ]
+                                }
+                            ]
+                        },
+                        "PolicyName": "InlinePolicy"
+                    }
+                ]
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "0e1f2958-64ba-435d-b80c-4d568c3b65ed"
+                }
+            }
+        },
+        "OtaForceStopperLambda": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+                "Code": {
+                    "S3Bucket": "iotlab-release-ap-south-1",
+                    "S3Key": "ota-monitor/OtaForceStopper.zip"
+                },
+                "Handler": "ota_force_stopper.lambda_handler",
+                "Role": {
+                    "Fn::GetAtt": [
+                        "OtaForceStopperLambdaExecutionRole",
+                        "Arn"
+                    ]
+                },
+                "Runtime": "python3.8",
+                "Timeout": 5
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "2d5ca0bf-52b3-482e-b05b-a2f4b84181f6"
+                }
+            },
+            "DependsOn": [
+                "OtaForceStopperLambdaExecutionRole"
+            ]
+        },
+        "SnsToLambdaPermission": {
+            "Type": "AWS::Lambda::Permission",
+            "Properties": {
+                "Action": "lambda:InvokeFunction",
+                "Principal": "sns.amazonaws.com",
+                "SourceArn": {
+                    "Ref": "OtaForceStopTopic"
+                },
+                "FunctionName": {
+                    "Fn::GetAtt": [
+                        "OtaForceStopperLambda",
+                        "Arn"
+                    ]
+                }
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "6d98f916-3c67-4ad7-a5d6-0ac91d6d7ebd"
+                }
+            },
+            "DependsOn": [
+                "OtaForceStopTopic",
+                "OtaForceStopperLambda"
+            ]
+        },
+        "EmailNotificationTopic": {
+            "Type": "AWS::SNS::Topic",
+            "Properties": {
+                "DisplayName": "EmailNotificationTopic",
+                "TopicName": "email-notification",
+                "Subscription": [
+                    {
+                        "Endpoint": {
+                            "Ref": "AlarmEmailEndpoint"
+                        },
+                        "Protocol": "email"
+                    }
+                ]
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "2bbcb016-cb07-4b04-9706-5b58372b330f"
+                }
+            }
+        }
+    }
+}

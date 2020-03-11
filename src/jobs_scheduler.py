@@ -84,7 +84,7 @@ class ota_deployment_tool():
                             logging.error(err)
                             return
                         logging.info('creating new job, thingArnList: %s', thingArnList)
-                        status, err = self.iot_interface.create_job(jobId, thingArnList, jobDocumentSrc)
+                        status, err = self.iot_interface.create_job(deployConfig)
                         if not status:
                             logging.error(err)
                             return

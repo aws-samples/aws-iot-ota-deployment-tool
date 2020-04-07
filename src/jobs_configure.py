@@ -50,9 +50,9 @@ def parse_thingList(thingListFilePath):
         for line in fp:
             if len(line) > 1:
                 thingArn = line.strip()
-                _, thingName = thingArn.split(':thing/')
+                #_, thingName = thingArn.split(':thing/')
                 thingArnList.append(str(thingArn))
-                thingNameList.append(thingName)
+                #thingNameList.append(thingName)
                 deviceCount += 1
 
     logging.info(thingArnList)

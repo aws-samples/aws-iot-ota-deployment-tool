@@ -259,6 +259,7 @@ usePresignedUrlConfig = False
 useJobExecutionsRolloutConfig = False
 useAbortConfig = False
 useTimeoutConfig = False
+deviceCount = 1
 
 [CUSTOM_JOB_DOCUMENT]
 jobDocSrcCfg = local_file
@@ -379,6 +380,9 @@ description: [DEFAULT] section is required and the job will be deployed with the
     * if useAbortConfig set True, means [ABORT_CONFIG] section should be included in the config, if set false or useAbortConfig is not appeared in dev.ini [ABORT_CONFIG] section will be ignored
 * useTimeoutConfig (option):
     * if useTimeoutConfig set True, means [TIMEOUT_CONFIG] section should be included in the config, if set false or useTimeoutConfig is not appeared in dev.ini [TIMEOUT_CONFIG] section will be ignored, you remove the flag to ignore it
+* deviceCount:
+    * the device numbers that should be updated in this thingList.txt, for example: if a thing group has 10 devices and listed in thingList, deviceCount should be set to 10. 
+
 
 [CUSTOM_JOB_DOCUMENT]
 

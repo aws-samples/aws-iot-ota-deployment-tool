@@ -44,19 +44,17 @@ def parse_thingList(thingListFilePath):
     logging.info("parse_thingList..... with path %s", thingListFilePath)
     thingArnList = []
     thingNameList = []
-    deviceCount = 0
+    isThingListEmpty = True
     filepath = thingListFilePath
     with open(filepath) as fp:
         for line in fp:
             if len(line) > 1:
                 thingArn = line.strip()
-                #_, thingName = thingArn.split(':thing/')
                 thingArnList.append(str(thingArn))
-                #thingNameList.append(thingName)
-                deviceCount += 1
+                isThingListEmpty = False
 
     logging.info(thingArnList)
-    return thingArnList, deviceCount, thingNameList
+    return thingArnList, isThingListEmpty, thingNameList
 
 
 def md5_check_sum(filePath, fileChunkSize):
@@ -187,7 +185,8 @@ def default_section_parser(config):
         'useCustomJobDocument': config['DEFAULT'].getboolean('useCustomJobDocument'),
         'region':  config['DEFAULT']['region'],
         'fileChunkSize': int(config['DEFAULT']['fileChunkSize']),
-        'targetSelection': config['DEFAULT']['targetSelection']
+        'targetSelection': config['DEFAULT']['targetSelection'],
+        'deviceCount': int(config['DEFAULT']['deviceCount'])
     }
     binName = defaultConfig['binName']
     fileChunkSize = defaultConfig['fileChunkSize']
@@ -203,13 +202,12 @@ def default_section_parser(config):
     status = False
     file_stats = os.stat(binName)
     defaultConfig['md5sum'] = md5_check_sum(binName, fileChunkSize)
-    thingArnList, deviceCount, thingNameList = parse_thingList(thingListFilePath)
-    if deviceCount < 1:
+    thingArnList, isThingListEmpty, thingNameList = parse_thingList(thingListFilePath)
+    if isThingListEmpty:
         raise Exception('thing list should not be empty')
     s3_interface.upload_file_to_s3(binName, bucket, binFileKey)
     defaultConfig['thingArnList'] = thingArnList
     defaultConfig['thingNameList'] = thingNameList
-    defaultConfig['deviceCount'] = deviceCount
     defaultConfig['fileId'] = fileId
     defaultConfig['fileSize'] = file_stats.st_size
     return defaultConfig
